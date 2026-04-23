@@ -1,6 +1,8 @@
 # ClawSynth
 
-<img src="./assets/logos/ClawSynth.png" alt="ClawSynth logo" width="400" height="250">
+<p align="center">
+  <img src="./assets/logos/ClawSynth.png" alt="ClawSynth logo" width="400" height="250">
+</p>
 
 
 ClawSynth 是一个面向 OpenClaw Agent 的数据合成项目，用来批量构造可执行的用户 query、为需要本地输入文件的 query 反向合成文件，并最终调用 OpenClaw 生成完整对话轨迹。
