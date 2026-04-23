@@ -23,6 +23,11 @@ Thumbs.db
 result/
 *.log
 
+# LiteLLM local config
+litellm_config/*.yaml
+litellm_config/*.jsonl
+!litellm_config/*.example
+
 # Package only zip archives for shared skills
 skills/*/
 generator_skills/*/

@@ -152,6 +152,8 @@ python src/batch_filegen.py cleanup \
 ## Openclaw轨迹生成
 `src/batch_openclaw.py` 用来把 `workspace_hub` 中已经准备好的 query 批量交给 OpenClaw，生成对话轨迹，并支持按 domain 并发、断点续跑、技能池随机采样。
 
+如果你希望获取到底层模型最原始的请求和返回结果，而不只是 OpenClaw 默认导出的 session 轨迹文件，那么必须启用项目中的 `litellm_config/`，让 OpenClaw 通过 LiteLLM 网关调用模型。否则默认流程只能拿到 session 轨迹，拿不到最底层的原始请求数据。详细说明见根目录下的 [litellm_config/README.md](/mnt/d/project/clawsynth/litellm_config/README.md)。
+
 脚本支持 4 个子命令：
 
 - `run`：执行所有轨迹生成任务
