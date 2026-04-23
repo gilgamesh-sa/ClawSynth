@@ -219,6 +219,16 @@ PYTHONUNBUFFERED=1 nohup uv run python src/batch_openclaw.py run \
 
 如果你希望获取到底层模型最原始的请求和返回结果，而不只是最终 session 轨迹文件，那么必须启用 `litellm_config/`，让 OpenClaw 通过 LiteLLM 网关调用模型。否则默认流程只能拿到 OpenClaw 导出的 session 轨迹，拿不到最底层的原始请求数据。详细说明见 [litellm_config/README.md](./litellm_config/README.md)。
 
+启用 LiteLLM 后，原始抓取结果会写入 `litellm_config/success_events_all.jsonl`。这个文件信息更完整，但不太适合直接阅读；如果你想把它转换成更易读的对话格式，可以执行：
+
+```bash
+uv run python src/process_data/process_conversations.py \
+  --input_file ./litellm_config/success_events_all.jsonl \
+  --output_file ./litellm_config/message.jsonl
+```
+
+处理后的 `litellm_config/message.jsonl` 更适合直接查看、抽样检查，或者继续做后续数据处理。
+
 输出结果会保存在 `--results-dir` 中，包括：
 
 - `checkpoint.jsonl`

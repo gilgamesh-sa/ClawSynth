@@ -260,3 +260,15 @@ success_events_all.jsonl
 - `GEN_OPENCLAW_MODEL`
 
 都统一切到 `litellm/...` 前缀模型，这样 query 文件合成和正向轨迹生成两个阶段都可以统一从代理层抓到底层请求和返回结果。
+
+## 后期处理
+`success_events_all.jsonl` 是 LiteLLM 抓到的原始日志，信息比较全，但直接阅读不太方便。
+
+如果你想把它整理成更适合检查对话内容的格式，可以运行下面这条命令：
+
+```bash
+uv run python src/process_data/process_conversations.py \
+  --input_file ./litellm_config/success_events_all.jsonl \
+  --output_file ./litellm_config/message.jsonl
+```
+这个文件比原始日志更适合直接查看、抽样检查，或者继续做后续数据处理。
