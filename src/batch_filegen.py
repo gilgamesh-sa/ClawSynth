@@ -237,7 +237,7 @@ def list_workspace_dirs() -> list[Path]:
     assert WORKSPACE_HUB is not None
     return sorted(
         d for d in WORKSPACE_HUB.iterdir()
-        if d.is_dir() and d.name.startswith("workspace_")
+        if d.is_dir() and (d / INPUT_FILENAME).exists()
     )
 
 
@@ -256,7 +256,7 @@ def sync_workspace(ws_dir: Path, tmp_ws: Path):
     tmp_ws.mkdir(parents=True, exist_ok=True)
 
     for item in ws_dir.iterdir():
-        if item.name in {LOG_FILENAME, "skills"}:
+        if item.name == LOG_FILENAME:
             continue
         target = tmp_ws / item.name
         try:
@@ -723,7 +723,7 @@ def run_all():
     workspace_dirs = list_workspace_dirs()
 
     if not workspace_dirs:
-        print("❌ 未找到任何 workspace_* 目录")
+        print(f"❌ 未找到任何包含 {INPUT_FILENAME} 的 workspace 目录")
         return
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
