@@ -1,6 +1,7 @@
 # ClawSynth
 
-![](./assets/logos/ClawSynth.png)
+<img src="./assets/logos/ClawSynth.png" alt="ClawSynth logo" width="400" height="250">
+
 
 ClawSynth 是一个面向 OpenClaw Agent 的数据合成项目，用来批量构造可执行的用户 query、为需要本地输入文件的 query 反向合成文件，并最终调用 OpenClaw 生成完整对话轨迹。
 
@@ -260,7 +261,7 @@ uv run python src/batch_openclaw.py cleanup \
 
 更详细的阶段说明请看：
 
-- `src/gen_query/README.md`
-- `src/README.md`
+- [src/gen_query/README.md](./src/gen_query/README.md)
+- [src/README.md](./src/README.md)
 
 如果要重新跑某个阶段，建议先确认对应阶段的输出目录、日志文件和 checkpoint 行为，避免把不同实验的数据混在一起。
