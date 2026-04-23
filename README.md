@@ -1,7 +1,7 @@
 # ClawSynth
 
 Synthetic workspace and query generation toolkit.
-
+![](./assets/logos/ClawSynth.png)
 ## Reproducible Setup
 
 This project is pinned for Python `3.13.5` and uses `uv` for environment management.
