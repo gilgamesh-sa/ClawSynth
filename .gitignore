@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+.venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+.codex
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated outputs
+result/
+*.log
+
+# Package only zip archives for shared skills
+skills/*/
+generator_skills/*/
+!skills/*.zip
+!generator_skills/*.zip

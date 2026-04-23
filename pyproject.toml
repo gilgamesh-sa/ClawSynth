@@ -1,0 +1,9 @@
+[project]
+name = "clawsynth"
+version = "0.1.0"
+description = "ClawSynth - Synthetic workspace and query generation toolkit"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "openai>=2.32.0",
+    "tqdm>=4.67.3",
+]
