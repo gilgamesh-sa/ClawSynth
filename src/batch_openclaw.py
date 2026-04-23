@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-批量运行 OpenClaw 任务脚本 (v4 - 究极重启隔离版)
+批量运行 OpenClaw 任务脚本
 
-架构更新 (v4)：
+架构更新：
   - 核心变更：【每跑一次 Task，彻底销毁并重建 Agent】。确保上下文 100% 隔离，杜绝任何僵尸进程对后续 Task 或日志文件的污染。
   - 每个领域对应 1 个独立 workspace 物理目录。
   - 领域间并发，领域内串行执行。
   - 支持断点续跑：使用 checkpoint 文件记录已完成的任务，中断后再次运行自动跳过。
 
 用法：
-  python batch_openclaw_v4.py run      # 执行所有任务
-  python batch_openclaw_v4.py cleanup  # 手动清理残留 agents
-  python batch_openclaw_v4.py reset    # 清除 checkpoint 记录，从头开始跑
-  python batch_openclaw_v4.py status   # 查看当前进度
+  python batch_openclaw.py run      # 执行所有任务
+  python batch_openclaw.py cleanup  # 手动清理残留 agents
+  python batch_openclaw.py reset    # 清除 checkpoint 记录，从头开始跑
+  python batch_openclaw.py status   # 查看当前进度
 """
 
 import argparse
