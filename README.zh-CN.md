@@ -1,13 +1,15 @@
-[![English](https://img.shields.io/badge/Language-English-blue)](./README.md)
-[![简体中文](https://img.shields.io/badge/语言-简体中文-red)](./README.zh-CN.md)
-
-# ClawSynth
+# ClawSynth：面向 OpenClaw 的合成轨迹生成
 
 <p align="center">
-  <img src="./assets/logos/ClawSynth.png" alt="ClawSynth logo" width="400" height="250">
+  <img src="./assets/logos/ClawSynth.png" alt="ClawSynth logo"  width="550" height="400">
 </p>
 
-ClawSynth 是一个面向 OpenClaw Agent 的数据合成与验证项目，用来批量构造可执行的用户 query、为需要本地输入文件的 query 反向合成文件、调用 OpenClaw 生成完整对话轨迹，并在需要时对这些轨迹做后处理验证。
+<p align="center">
+  <a href="./README.md"><img src="https://img.shields.io/badge/Language-English-blue" alt="English"></a>
+  <a href="./README.zh-CN.md"><img src="https://img.shields.io/badge/语言-简体中文-red" alt="简体中文"></a>
+</p>
+
+**ClawSynth** 是一个面向 OpenClaw Agent 的数据合成与验证项目，用来批量构造可执行的用户 query、为需要本地输入文件的 query 反向合成文件、调用 OpenClaw 生成完整对话轨迹，并在需要时对这些轨迹做后处理验证。
 
 当前项目的主流程可以分成四个阶段：
 

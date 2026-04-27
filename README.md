@@ -1,13 +1,15 @@
-[![English](https://img.shields.io/badge/Language-English-blue)](./README.md)
-[![简体中文](https://img.shields.io/badge/语言-简体中文-red)](./README.zh-CN.md)
-
-# ClawSynth
+# ClawSynth: Synthetic Trajectory Generation for OpenClaw
 
 <p align="center">
-  <img src="./assets/logos/ClawSynth.png" alt="ClawSynth logo" width="400" height="250">
+  <img src="./assets/logos/ClawSynth.png" alt="ClawSynth logo" width="550" height="400">
 </p>
 
-ClawSynth is a data synthesis and validation project for OpenClaw Agent workflows. It is used to batch-generate executable user queries, synthesize required local input files when a query depends on them, run OpenClaw to produce full conversation trajectories, and optionally validate those trajectories afterward.
+<p align="center">
+  <a href="./README.md"><img src="https://img.shields.io/badge/Language-English-blue" alt="English"></a>
+  <a href="./README.zh-CN.md"><img src="https://img.shields.io/badge/语言-简体中文-red" alt="简体中文"></a>
+</p>
+
+**ClawSynth** is a data synthesis and validation project for OpenClaw Agent workflows. It is used to batch-generate executable user queries, synthesize required local input files when a query depends on them, run OpenClaw to produce full conversation trajectories, and optionally validate those trajectories afterward.
 
 The project can be viewed as four stages:
 
