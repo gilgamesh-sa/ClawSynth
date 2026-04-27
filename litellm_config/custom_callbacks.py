@@ -59,7 +59,6 @@ class MyCustomHandler(CustomLogger):
             litellm_params = kwargs.get("litellm_params", {})
             metadata = litellm_params.get("metadata", {})
 
-            # Anthropic 协议：system prompt 和 tools 在 optional_params 中
             optional_params = kwargs.get("optional_params", {})
             system = optional_params.get("system") or litellm_params.get("system")
             tools = optional_params.get("tools")

@@ -23,108 +23,109 @@ TYPE_CHOICES = list(TYPE_WEIGHTS.keys())
 TYPE_PROBS = list(TYPE_WEIGHTS.values())
 
 OUTPUT_FORMATS = [
-    ".html（HTML 网页）",
-    ".xlsx（Excel 表格）",
-    ".png（PNG 图片）",
-    ".docx（Word 文档）",
-    ".md（Markdown 文档）",
-    ".mp3（MP3 音频）",
-    ".pdf（PDF 文档）",
-    ".csv（CSV 数据文件）",
-    ".pptx（PowerPoint 演示文稿）",
-    ".svg（SVG 矢量图）",
+    ".html (HTML webpage)",
+    ".xlsx (Excel spreadsheet)",
+    ".png (PNG image)",
+    ".docx (Word document)",
+    ".md (Markdown document)",
+    ".mp3 (MP3 audio)",
+    ".pdf (PDF document)",
+    ".csv (CSV data file)",
+    ".pptx (PowerPoint presentation)",
+    ".svg (SVG vector image)",
 ]
 
 TOPICS = [
-    "新能源汽车", "宠物经济", "咖啡连锁行业", "跨境电商", "智能家居",
-    "老年护理", "电竞产业", "农业科技", "在线教育", "医美行业",
-    "航天航空", "精酿啤酒", "二手奢侈品", "健身运动", "母婴用品",
-    "古典音乐演出", "非遗手工艺", "露营户外", "剧本杀行业", "宠物医疗",
-    "共享经济", "数字藏品NFT", "社区团购", "心理咨询", "中医药",
-    "新式茶饮", "预制菜", "充电桩基建", "快递物流", "短剧影视",
-    "植物基食品", "无人驾驶", "碳中和", "3D打印", "虚拟偶像",
-    "少儿编程", "银发旅游", "潮玩盲盒", "宠物食品", "民宿经营",
-    "量子计算", "脑机接口", "合成生物", "供应链金融", "数字人民币",
-    "光伏产业", "海洋经济", "体育赛事", "音乐节演出", "汉服文化",
-    "考研留学", "职业培训", "机器人产业", "生物医药", "芯片封测",
-    "保险科技", "直播电商", "文创产品", "仓储物流", "智慧城市",
+    "new energy vehicles", "pet economy", "coffee chain industry", "cross-border e-commerce", "smart home",
+    "elder care", "esports industry", "agricultural technology", "online education", "medical aesthetics industry",
+    "aerospace", "craft beer", "second-hand luxury goods", "fitness and sports", "maternal and baby products",
+    "classical music performances", "intangible cultural heritage handicrafts", "camping and outdoors", "murder mystery game industry", "pet healthcare",
+    "sharing economy", "digital collectibles and NFTs", "community group buying", "psychological counseling", "traditional Chinese medicine",
+    "new-style tea drinks", "prepared meals", "EV charging infrastructure", "express delivery and logistics", "short-form drama and film",
+    "plant-based foods", "autonomous driving", "carbon neutrality", "3D printing", "virtual idols",
+    "children's programming", "senior travel", "designer toy blind boxes", "pet food", "homestay operations",
+    "quantum computing", "brain-computer interfaces", "synthetic biology", "supply chain finance", "digital RMB",
+    "photovoltaic industry", "marine economy", "sports events", "music festival performances", "Hanfu culture",
+    "graduate school and overseas study", "vocational training", "robotics industry", "biomedicine", "chip packaging and testing",
+    "insurtech", "livestream e-commerce", "cultural and creative products", "warehousing and logistics", "smart cities",
 ]
 
 SCENARIOS = [
-    "请生成一个偏向工作汇报场景的 query",
-    "请生成一个偏向个人学习或研究场景的 query",
-    "请生成一个偏向创意或设计场景的 query",
-    "请生成一个偏向数据分析场景的 query",
-    "请生成一个偏向自动化或效率提升场景的 query",
-    "请生成一个偏向内容创作场景的 query",
-    "请生成一个偏向决策支持场景的 query",
-    "请生成一个偏向客户服务或沟通场景的 query",
-    "请生成一个偏向教育培训场景的 query",
-    "请生成一个比较独特或小众的使用场景的 query",
+    "Generate a query oriented toward a work reporting scenario.",
+    "Generate a query oriented toward a personal learning or research scenario.",
+    "Generate a query oriented toward a creative or design scenario.",
+    "Generate a query oriented toward a data analysis scenario.",
+    "Generate a query oriented toward an automation or productivity improvement scenario.",
+    "Generate a query oriented toward a content creation scenario.",
+    "Generate a query oriented toward a decision-support scenario.",
+    "Generate a query oriented toward a customer service or communication scenario.",
+    "Generate a query oriented toward an education or training scenario.",
+    "Generate a query for a relatively unique or niche use case.",
 ]
 
 INPUT_SECTION_EXPLICIT = """
-## ⚠️ 【最重要】输入文件路径 — 绝对不能遗漏！
-很多 skill 需要用户提供本地文件才能工作。如果你使用了这类 skill（无论是主 skill 还是组合 skill），**query 中必须明确写出每一个输入文件的完整路径**，一个都不能遗漏！
+## WARNING: Most Important Requirement for Input Files - Do Not Omit Paths
+Many skills require local input files provided by the user. If you use any such skill, whether as the main skill or a combined skill, the query must explicitly include the full path of every required input file without missing any.
 
-**规则**：
-- 文件路径必须带子目录前缀 `./`，文件名用英文且贴合场景
-- 每个需要输入文件的 skill 对应的文件路径都必须出现在 query 中
-- query 中要自然地引用这些文件（如"帮我识别 `./receipt_photo.png` 这张图片"、"我有一份文件 `./project_plan.pdf`"）
-- **绝对不允许**只说"帮我识别一张图片"却不给出文件路径！
+**Rules**:
+- Every file path must include the `./` prefix, and the file name must be in English and fit the scenario.
+- The query must include the file path for every skill that requires an input file.
+- Refer to the files naturally in the query, for example: "Help me extract the content from `./receipt_photo.png`" or "I have a file called `./project_plan.pdf`".
+- It is absolutely not allowed to say only "Help me process an image" without giving the file path.
 """
 
 INPUT_SECTION_VAGUE = """
-## ⚠️ 【最重要】输入文件 — 只做模糊描述，不给路径！
-有些 skill 需要用户提供本地文件才能工作。在这条 query 中，你要 **模拟一个懒用户**：
-- **只用自然语言描述文件的存在和内容**，但 **绝不写出文件路径或文件名**
-- 让 AI 助手自己去寻找或确认文件
+## WARNING: Most Important Requirement for Input Files - Use Only Vague Descriptions, No Paths
+Some skills require local input files. In this query, you must simulate a lazy user:
+- Describe the existence and content of the files only in natural language.
+- Never provide any file path or file name.
+- Let the AI assistant find or confirm the files on its own.
 
-**规则**：
-- ✅ 正确写法："我之前存了一份销售数据"、"我有一张发票的照片"、"我电脑上有份英文年报"、"我昨天录的那段会议音频"
-- ❌ 错误写法："帮我识别 `./receipt.png`"、"分析 `./sales_data.csv`"（不能出现任何 `./xxx` 路径！）
-- 文件的描述要足够具体，让人知道大概是什么文件（类型、内容、用途），但不给出精确文件名或路径
-- 如果任务需要多个输入文件，每个都只做模糊描述
+**Rules**:
+- Correct style: "I saved some sales data earlier", "I have a photo of an invoice", "There is an English annual report on my computer", "The meeting audio I recorded yesterday".
+- Incorrect style: "Help me process `./receipt.png`", "Analyze `./sales_data.csv`" because no `./xxx` path may appear.
+- The file description should be specific enough to indicate what kind of file it is and what it is for, but it must not reveal the exact file name or path.
+- If the task needs multiple input files, describe each of them vaguely.
 """
 
 
 def _format_other_skills(other_skills: list[SkillInfo]) -> str:
     if not other_skills:
-        return "  （无其他可用能力）"
+        return "  (No other available capabilities)"
     return "\n".join(f"  - **{skill.name}**: {skill.description}" for skill in other_skills)
 
 
 def _build_system_prompt_file(vague_input: bool) -> str:
     input_section = INPUT_SECTION_VAGUE if vague_input else INPUT_SECTION_EXPLICIT
     return f"""\
-你是一个AI助手的用户模拟器。你的任务是生成真实、自然的用户请求（query）。
+You are simulating a user of an AI assistant. Your task is to generate a realistic and natural user request (query).
 
-## 背景
-你正在使用一个拥有多种 skill（技能插件）的 AI 助手平台。每个 skill 提供不同的能力。
-你需要根据给定的「主 skill」和「其他可用 skill」，生成一个自然的用户请求。
+## Background
+You are using an AI assistant platform with multiple skills (skill plugins). Each skill provides different capabilities.
+Based on the given main skill and other available skills, generate a natural user request.
 
-## 要求
-1. **必须使用指定的主 skill**：生成的 query 必须明确触发主 skill 的能力
-2. **组合其他能力（必须强连接）**：如果有其他可用能力，可以选择 1~2 个进行组合（如果没有其他可用能力就不用组合）。但组合时 **必须让多个能力之间形成逻辑上的因果链或流水线关系**，前一个步骤的输出要成为后一个步骤的输入或素材。
-   - ✅ 好例子："帮我识别 `./invoice_scan.png` 里的内容，然后把识别出来的数据整理到 Excel 表格"
-   - ✅ 好例子："帮我搜一下最新的行业资讯，然后基于搜索到的内容帮我录一期播客"
-   - ✅ 好例子："帮我把 `./annual_report_en.pdf` 翻译一下，翻译好之后再帮我读出来生成音频"
-   - ❌ 坏例子："帮我生成一份行业报告，顺便翻译一下这个文件"（两件独立任务，没有因果关系）
-   - ❌ 坏例子："帮我做个图表分析，另外也帮我做个前端页面"（并列罗列，没有数据流动）
-   - 如果没有能力能形成有意义的因果链，就只用核心能力，**绝不勉强拼凑**
-3. **输出方式（必须遵守）**：从下方给出的「候选输出格式」中 **必须** 选择一个作为最终输出格式。选定后，query 中 **必须** 明确写出输出文件的完整路径和文件名，后面加上 5 个随机数字以防重名（如 `./pet_healthcare_report_12315.pdf`、`./sales_data_12246.csv`），不能只说"保存为 Word 文档"这种模糊表述。即使 skill 本身有默认输出格式，也必须使用候选格式中的一种。
-4. **自然真实**：query 要像一个真实用户在工作中向 AI 助手发出的请求，不要像测试用例
-5. **话题选择**：从下方给出的「候选话题」中选择一个作为 query 的主题领域，让内容具体、有细节
-6. **用中文写 query**
-7. **文件名必须用英文，英文后面加上 5 个随机数字以防重名**：所有输入文件路径和输出文件路径的文件名 **必须使用英文命名**（如 `./sales_data_22134.csv`、`./industry_report_23123.pdf`），**禁止使用中文文件名**
-8. **禁止透露实现方法**：query 中 **绝对禁止** 出现任何技能名称、技术术语或实现手段。用户只描述「要什么」，绝不说「怎么做」或「用什么工具」。
-   - ❌ 禁止出现的词汇/说法："用 OCR 识别"、"用文生图生成"、"用语音合成朗读"、"用翻译功能"、"用搜索能力"、"文字识别技术"、"TTS"、"声音复刻"、任何 skill 名称
-   - ✅ 正确写法："帮我识别这张图片里的文字"、"帮我生成一张……的图片"、"帮我把这段话读出来"、"帮我翻译这份文件"、"帮我搜一下……"
-   - 核心原则：**query 读起来就是一个普通用户在说话，完全不知道背后有什么 skill 或技术在工作**
+## Requirements
+1. **The specified main skill must be used**: the generated query must clearly trigger the capability of the main skill.
+2. **Combining other capabilities is allowed, but the connection must be strong**: if other capabilities are available, you may combine 1 to 2 of them, and you may also choose not to combine any if none fits well. However, the combined capabilities must form a logical causal chain or pipeline, where the output of one step becomes the input or material for the next.
+   - Good example: "Help me extract the content from `./invoice_scan.png`, then organize the extracted data into an Excel spreadsheet."
+   - Good example: "Help me look up the latest industry news, then use what you find to help me create a podcast episode."
+   - Good example: "Help me translate `./annual_report_en.pdf`, and after that turn the translated content into audio."
+   - Bad example: "Help me create an industry report, and also translate this file." This is two unrelated tasks without a causal relationship.
+   - Bad example: "Help me analyze a chart, and also build a frontend page." This is just a list of parallel tasks with no data flow.
+   - If no meaningful causal chain can be formed, use only the core capability and do not force an awkward combination.
+3. **Output format requirement**: you must choose one final output format from the candidate output formats listed below. The query must explicitly include the complete output file path and file name, followed by 5 random digits to avoid collisions, for example `./pet_healthcare_report_12315.pdf` or `./sales_data_12246.csv`. Do not use vague wording such as "save it as a Word document". Even if a skill has a default output format, you must still choose one of the candidate formats.
+4. **Keep it natural and realistic**: the query should sound like a real workplace user speaking to an AI assistant, not like a test case.
+5. **Topic selection**: choose one topic from the candidate topics below as the domain of the query, and make it concrete and detailed.
+6. **Write the final query in Chinese.**
+7. **File names must be in English and must end with 5 random digits to avoid collisions**: all input and output file names must be in English, such as `./sales_data_22134.csv` or `./industry_report_23123.pdf`. Chinese file names are not allowed.
+8. **Do not reveal implementation details**: the query must not mention any skill names, technical terminology, or implementation methods. The user should describe only what they want, never how to do it or which tool to use.
+   - Do not mention technology names or capability labels such as OCR, text-to-image generation, text-to-speech, translation features, search capability, voice cloning, or any skill name.
+   - Preferred wording is plain user language such as asking to read text from an image, generate an image, read text aloud, translate a file, or look something up.
+   - Core principle: the query should read like something a normal user would say, with no awareness of the underlying skills or technologies.
 {input_section}
 
-## 输出格式
-只输出一行 query 文本，不要有多余的解释、引号或前缀。"""
+## Output Format
+Output only a single line containing the query text. Do not include any extra explanation, quotation marks, or prefixes."""
 
 
 def build_file_prompt(main_skill: SkillInfo, other_skills: list[SkillInfo], *, vague_input: bool) -> str:
@@ -134,48 +135,48 @@ def build_file_prompt(main_skill: SkillInfo, other_skills: list[SkillInfo], *, v
     topic_options = "、".join(random.sample(TOPICS, 3))
 
     user_lines = [
-        "## 核心能力（query 必须覆盖此能力，但禁止在 query 中提及能力名称或技术术语）",
-        f"- **能力名称**: {main_skill.name}（⚠️ 禁止在 query 中出现此名称！）",
-        f"- **能力描述**: {main_skill.description}",
+        "## Core Capability (the query must cover this capability, but must not mention the capability name or technical terms)",
+        f"- **Capability name**: {main_skill.name} (Do not let this name appear in the query.)",
+        f"- **Capability description**: {main_skill.description}",
         "",
-        "## 其他可选能力（可组合使用，但禁止在 query 中提及这些能力的名称或技术术语）",
+        "## Other Optional Capabilities (you may combine them, but do not mention their names or technical terms in the query)",
         _format_other_skills(other_skills),
         "",
-        "## 场景提示",
+        "## Scenario Hint",
         scenario,
         "",
-        "## 候选输出格式（必须从中选一个）",
+        "## Candidate Output Formats (you must choose one)",
         output_formats,
         "",
-        "## 候选话题（从中选择一个作为 query 的主题领域）",
-        topic_options,
+        "## Candidate Topics (choose one as the domain of the query)",
+        topic_options.replace("、", ", "),
         "",
-        "## ⚠️ 输出文件路径 — 最终检查（不合格将被退回！）",
-        "你生成的 query 中 **必须** 包含一个明确的输出文件路径（格式：`./english_filename.ext`），扩展名必须来自上面的候选格式，文件名必须用英文。",
-        '- ✅ 正确："...保存到 `./blind_box_sales_analysis.png`"',
-        '- ✅ 正确："...导出为 `./coffee_industry_report.pdf`"',
-        '- ✅ 正确："...输出到 `./quarter_summary.xlsx`"',
-        '- ❌ 错误："...帮我生成一张柱状图，最后把生成的图表保存好"（没有写文件路径！）',
-        '- ❌ 错误："...保存为 Word 文档"（没有具体文件名！）',
-        '- ❌ 错误："...保存到 `./潮玩盲盒分析.png`"（文件名不能用中文！）',
+        "## WARNING: Final Check for the Output File Path",
+        "The generated query must include one explicit output file path in the format `./english_filename.ext`. The extension must come from the candidate formats above, and the file name must be in English.",
+        '- Correct: "...save it to `./blind_box_sales_analysis.png`"',
+        '- Correct: "...export it as `./coffee_industry_report.pdf`"',
+        '- Correct: "...output it to `./quarter_summary.xlsx`"',
+        '- Incorrect: "...help me generate a bar chart and save it at the end"' ,
+        '- Incorrect: "...save it as a Word document"' ,
+        '- Incorrect: "...save it to `./chaowan_manghe_analysis.png`" if the file name is not natural English or violates the naming rule.',
     ]
 
     if vague_input:
         user_lines.extend(
             [
                 "",
-                "## ⚠️ 输入文件 — 再次提醒",
-                "这条 query 中涉及的输入文件，**只能用自然语言模糊描述**，绝不能出现 `./xxx` 路径！",
-                "让 AI 助手自己去寻找文件。",
+                "## WARNING: Reminder About Input Files",
+                "Any input file mentioned in this query must be described only vaguely in natural language. No `./xxx` path may appear.",
+                "Let the AI assistant find the file on its own.",
             ]
         )
 
     user_lines.extend(
         [
             "",
-            "## 生成",
-            "请生成一条自然的中文用户 query，只输出 query 本身，不要有其他内容。",
-            "再次确认：(1) query 中是否包含了 `./english_name.ext` 格式的输出文件路径？(2) 文件名是否为英文？如果不满足，请修正！",
+            "## Generate",
+            "Generate one natural Chinese user query. Output only the query itself and nothing else.",
+            "Check again: (1) Does the query include an output file path in the format `./english_name.ext`? (2) Is the file name in English? If not, fix it.",
         ]
     )
     user_prompt = "\n".join(user_lines)
@@ -185,32 +186,32 @@ def build_file_prompt(main_skill: SkillInfo, other_skills: list[SkillInfo], *, v
 def _build_system_prompt_chat(vague_input: bool) -> str:
     input_section = INPUT_SECTION_VAGUE if vague_input else INPUT_SECTION_EXPLICIT
     return f"""\
-你是一个AI助手的用户模拟器。你的任务是生成真实、自然的用户请求（query）。
+You are simulating a user of an AI assistant. Your task is to generate a realistic and natural user request (query).
 
-## 背景
-你正在使用一个拥有多种 skill（技能插件）的 AI 助手平台。每个 skill 提供不同的能力。
-你需要根据给定的「主 skill」和「其他可用 skill」，生成一个自然的用户请求。
+## Background
+You are using an AI assistant platform with multiple skills (skill plugins). Each skill provides different capabilities.
+Based on the given main skill and other available skills, generate a natural user request.
 
-## 要求
-1. **必须使用指定的主 skill**：生成的 query 必须明确触发主 skill 的能力
-2. **组合其他 skill（必须强连接）**：如果有其他可用 skill，可以选择 1~2 个进行组合（如果没有其他可用 skill 就不用组合）。但组合时 **必须让多个 skill 之间形成逻辑上的因果链或流水线关系**，前一个 skill 的输出要成为后一个 skill 的输入或素材。
-   - ✅ 好例子："先用 OCR 识别 `./invoice_scan.png` 的内容，然后帮我分析发票金额是否合理"（OCR 提取 → 分析）
-   - ✅ 好例子："帮我搜索最新的行业资讯，基于搜索结果给我一个投资建议"（搜索 → 分析建议）
-   - ✅ 好例子："翻译 `./annual_report_en.pdf` 的内容，然后帮我总结其中的关键要点"（翻译 → 总结）
-   - ❌ 坏例子："帮我生成一份行业报告，顺便翻译一下这个文件"（两件独立任务，没有因果关系）
-   - ❌ 坏例子："帮我做个图表分析，另外也帮我做个前端页面"（并列罗列，没有数据流动）
-   - 如果没有 skill 能形成有意义的因果链，就只用主 skill，**绝不勉强拼凑**
-3. **输出方式：直接在对话中回复**。query 中 **不要** 要求保存到文件、导出文件、输出到某个路径。用户只是想在对话中直接得到回答、分析、建议、解读、总结等文字回复。
-   - ❌ 禁止出现："保存到"、"导出为"、"输出到"、"生成 xxx 文件"、"./xxx.pdf" 等要求写文件的表述
-   - ✅ 正确的表述："帮我分析一下"、"给我一个总结"、"告诉我"、"解读一下"、"给出建议"
-4. **自然真实**：query 要像一个真实用户在工作中向 AI 助手发出的请求，不要像测试用例
-5. **话题选择**：从下方给出的「候选话题」中选择一个作为 query 的主题领域，让内容具体、有细节
-6. **用中文写 query**
-7. **输入文件名必须用英文**：如果 query 中涉及输入文件，文件名 **必须使用英文命名**（如 `./sales_data.csv`），**禁止使用中文文件名**
+## Requirements
+1. **The specified main skill must be used**: the generated query must clearly trigger the capability of the main skill.
+2. **Combining other skills is allowed, but the connection must be strong**: if other skills are available, you may combine 1 to 2 of them, and you may also choose not to combine any if none fits well. However, the combined skills must form a logical causal chain or pipeline, where the output of one skill becomes the input or material for the next.
+   - Good example: "First extract the content from `./invoice_scan.png`, then help me judge whether the invoice amount looks reasonable." This follows an extraction-to-analysis flow.
+   - Good example: "Help me search for the latest industry news and give me an investment suggestion based on the results." This follows a search-to-analysis flow.
+   - Good example: "Translate the content of `./annual_report_en.pdf`, then help me summarize the key points." This follows a translation-to-summary flow.
+   - Bad example: "Help me generate an industry report and also translate this file." This is two unrelated tasks without a causal relationship.
+   - Bad example: "Help me do chart analysis, and also build a frontend page." This is just a list of parallel tasks with no data flow.
+   - If no meaningful causal chain can be formed, use only the main skill and do not force an awkward combination.
+3. **Output mode: reply directly in the conversation**. The query must not ask to save a file, export a file, write to a path, or generate any output file. The user only wants a direct textual reply in the chat, such as an answer, analysis, suggestion, interpretation, or summary.
+   - Do not include wording that asks to save or export files, mentions `./xxx.pdf`, or otherwise requests file output.
+   - Preferred wording asks for analysis, a summary, an explanation, an interpretation, or a recommendation directly in the chat.
+4. **Keep it natural and realistic**: the query should sound like a real workplace user speaking to an AI assistant, not like a test case.
+5. **Topic selection**: choose one topic from the candidate topics below as the domain of the query, and make it concrete and detailed.
+6. **Write the final query in Chinese.**
+7. **Input file names must be in English**: if the query involves input files, their file names must be in English, such as `./sales_data.csv`. Chinese file names are not allowed.
 {input_section}
 
-## 输出格式
-只输出一行 query 文本，不要有多余的解释、引号或前缀。"""
+## Output Format
+Output only a single line containing the query text. Do not include any extra explanation, quotation marks, or prefixes."""
 
 
 def build_chat_prompt(main_skill: SkillInfo, other_skills: list[SkillInfo], *, vague_input: bool) -> str:
@@ -224,43 +225,43 @@ def build_chat_prompt(main_skill: SkillInfo, other_skills: list[SkillInfo], *, v
             for skill in other_skills
         )
     else:
-        other_skills_text = "  （无其他可用 skill）"
+        other_skills_text = "  (No other available skills)"
 
     user_lines = [
-        "## 主 skill（必须使用）",
-        f"- **名称**: {main_skill.name}",
+        "## Main Skill (must be used)",
+        f"- **Name**: {main_skill.name}",
         f"- **slug**: {main_skill.slug}",
-        f"- **描述**: {main_skill.description}",
+        f"- **Description**: {main_skill.description}",
         "",
-        "## 其他可用 skill（可选组合，但必须强连接）",
+        "## Other Available Skills (optional to combine, but the connection must be strong)",
         other_skills_text,
         "",
-        "## 场景提示",
+        "## Scenario Hint",
         scenario,
         "",
-        "## 候选话题（从中选择一个作为 query 的主题领域）",
-        topic_options,
+        "## Candidate Topics (choose one as the domain of the query)",
+        topic_options.replace("、", ", "),
         "",
-        "## ⚠️ 最终检查（不合格将被退回！）",
-        "- query 中 **不能** 有任何要求保存文件、导出文件的表述（不能出现 ./xxx.pdf、保存到、导出为 等）",
-        "- query 只要求 AI 在对话中直接给出回答、分析、建议或总结",
+        "## WARNING: Final Check",
+        "- The query must not contain any request to save or export a file, including mentions of `./xxx.pdf` or any other explicit file output.",
+        "- The query should ask the AI only for a direct in-chat answer, analysis, suggestion, or summary.",
     ]
 
     if vague_input:
         user_lines.append(
-            "- 涉及输入文件时，**只能模糊描述**（如“我有一份销售报告”），绝不能出现 `./xxx` 路径"
+            "- If input files are involved, describe them only vaguely, such as saying you have a sales report, and never include a `./xxx` path."
         )
     else:
         user_lines.append(
-            "- 如果 skill 需要输入文件，必须写出 `./english_filename.ext` 格式的输入路径"
+            "- If a skill requires an input file, the query must include the input path in the format `./english_filename.ext`."
         )
 
     user_lines.extend(
         [
             "",
-            "## 生成",
-            "请生成一条自然的中文用户 query，只输出 query 本身，不要有其他内容。",
-            "再次确认：query 中是否避免了任何文件输出要求？是否只要求对话回复？",
+            "## Generate",
+            "Generate one natural Chinese user query. Output only the query itself and nothing else.",
+            "Check again: does the query avoid all file-output requests, and does it ask only for a direct conversational reply?",
         ]
     )
     user_prompt = "\n".join(user_lines)

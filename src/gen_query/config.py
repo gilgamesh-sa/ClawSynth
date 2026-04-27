@@ -11,7 +11,8 @@ from pathlib import Path
 
 
 # ============================================================
-# 加载项目根目录 .env（仅在环境变量尚未设置时填充）
+# Load the project root .env file (only fill values that are not
+# already present in the environment).
 # ============================================================
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _env_file = PROJECT_ROOT / ".env"
@@ -67,4 +68,3 @@ REWRITE_TIMEOUT = 60
 
 # Step 3: persona source file. This path stays configurable on purpose.
 INSTRUCTIONS_FILE = DATA_DIR / "unique_task_instructions.json"
-

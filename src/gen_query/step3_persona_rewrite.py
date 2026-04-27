@@ -31,15 +31,15 @@ from src.gen_query.utils.workspace import iter_workspace_dirs
 WRITE_LOCK = threading.Lock()
 
 REWRITE_SYSTEM_PROMPT = """\
-你是一个 query 改写器。给定一条原始用户 query 和一个人设描述，你需要在保留原意的基础上，用该人设的语气重新改写 query。
+You are a query rewriter. Given an original user query and a persona description, rewrite the query in that persona's tone while preserving the original meaning.
 
-严格规则：
-1. 不改变意图
-2. 不改变文件名和路径
-3. 不增减需求
-4. 只改语气和措辞
-5. 用中文改写
-6. 只输出改写后的 query
+Strict rules:
+1. Do not change the intent.
+2. Do not change any file names or paths.
+3. Do not add or remove any requirements.
+4. Only adjust tone and wording.
+5. Rewrite it in Chinese.
+6. Output only the rewritten query.
 """
 
 
@@ -90,7 +90,7 @@ def rewrite_query(query: str, persona: str) -> str | None:
             model=LITELLM_MODEL,
             messages=[
                 {"role": "system", "content": REWRITE_SYSTEM_PROMPT},
-                {"role": "user", "content": f"## 人设\n{persona}\n\n## 原始 query\n{query}"},
+                {"role": "user", "content": f"## Persona\n{persona}\n\n## Original query\n{query}"},
             ],
             timeout=REWRITE_TIMEOUT,
         ).strip().strip('"')
