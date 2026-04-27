@@ -152,7 +152,9 @@ python src/batch_filegen.py cleanup \
 ## Openclaw轨迹生成
 `src/batch_openclaw.py` 用来把 `workspace_hub` 中已经准备好的 query 批量交给 OpenClaw，生成对话轨迹，并支持按 domain 并发、断点续跑、技能池随机采样。
 
-如果你希望获取到底层模型最原始的请求和返回结果，而不只是 OpenClaw 默认导出的 session 轨迹文件，那么必须启用项目中的 `litellm_config/`，让 OpenClaw 通过 LiteLLM 网关调用模型。否则默认流程只能拿到 session 轨迹，拿不到最底层的原始请求数据。详细说明见根目录下的 [litellm_config/README.md](/mnt/d/project/clawsynth/litellm_config/README.md)。
+如果你希望获取到底层模型最原始的请求和返回结果，而不只是 OpenClaw 默认导出的 session 轨迹文件，那么必须启用项目中的 `litellm_config/`，让 OpenClaw 通过 LiteLLM 网关调用模型。否则默认流程只能拿到 session 轨迹，拿不到最底层的原始请求数据。详细说明见根目录下的 [litellm_config/README.md](./litellm_config/README.md)。
+
+
 
 脚本支持 4 个子命令：
 
@@ -264,6 +266,7 @@ REQUIRED_SKILLS: set[str] = {
 
 比较适合作为必选 skill 的通常是网页搜索、OCR、语音转文字这类基础能力。
 
+
 ### 其他子命令
 
 查看当前进度：
@@ -294,3 +297,6 @@ python src/batch_openclaw.py cleanup \
 ```
 
 虽然 `cleanup` / `reset` / `status` 也复用了相同参数接口，但最关键的是 `--workspace-hub` 要和本次批处理数据对应，否则脚本无法正确识别 domain 集合。
+
+
+如果你希望在轨迹生成完成后继续做自动化质量验证，可以使用 `src/soft_verify/` 下的验证模块。它会基于 LiteLLM 网关抓取到的原始日志、workspace 状态和 agent 最终回复，对每条轨迹生成验证结果。详细使用方式见 [src/soft_verify/README.md](/mnt/d/project/clawsynth/src/soft_verify/README.md)。

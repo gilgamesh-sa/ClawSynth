@@ -13,6 +13,8 @@ ClawSynth 是一个面向 OpenClaw Agent 的数据合成项目，用来批量构
 - `反向生成文件`：分析 query 是否需要本地输入文件，并用 OpenClaw 反向生成这些文件。
 - `正向轨迹生成`：把准备好的 query、skills 和输入文件交给 OpenClaw，生成最终对话轨迹。
 
+此外，项目还提供一个独立的 `soft_verify` 验证模块，用来对 OpenClaw 生成出的对话轨迹做后处理验证。它会结合 query、workspace 状态和 agent 最终回复，生成验证计划并输出 `pass` / `review` / `fail` 结果。详细说明见 [src/soft_verify/README.md](/mnt/d/project/clawsynth/src/soft_verify/README.md)。
+
 推荐整体流程是：
 
 ```text
@@ -118,6 +120,8 @@ cd ..
 
 如果这些目录已经存在，可以不用重复解压。
 
+**您可以添加更多可用的skills来进行采样，这样可以丰富数据的类型。**
+
 ## 目录和文件作用
 
 ```text
@@ -147,6 +151,7 @@ cd ..
 
 - `src/gen_query/README.md`：query 合成阶段的详细说明。
 - `src/README.md`：反向文件生成和正向轨迹生成两个 OpenClaw 阶段的详细说明。
+- `src/soft_verify/README.md`：对话轨迹验证模块的详细说明，包括 LiteLLM 日志整理、验证输入抽取和两步验证流程。
 - `src/gen_query/config.py`：query 合成阶段的主要配置入口，包括 workspace 数量、skill 采样数、随机种子等。
 - `src/gen_query/run_step0_to_step3.sh`：一键执行 query 合成的 step0 到 step3。
 - `src/batch_filegen.py`：反向生成本地输入文件。
