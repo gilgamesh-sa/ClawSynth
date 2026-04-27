@@ -1,4 +1,4 @@
-# ClawSynth: Synthetic Trajectory Generation for OpenClaw
+# ClawSynth: Synthetic Agent Trajectory Generation for OpenClaw
 
 <p align="center">
   <img src="./assets/logos/ClawSynth.png" alt="ClawSynth logo" width="550" height="400">

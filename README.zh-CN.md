@@ -1,4 +1,4 @@
-# ClawSynth：面向 OpenClaw 的合成轨迹生成
+# ClawSynth：面向 OpenClaw 的Agent轨迹数据合成工具
 
 <p align="center">
   <img src="./assets/logos/ClawSynth.png" alt="ClawSynth logo"  width="550" height="400">
