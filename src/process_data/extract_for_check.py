@@ -10,7 +10,7 @@ TS_PREFIX_RE = re.compile(r"^\[([^\]]+)\]\s*")
 
 
 def extract_text(content):
-    """提取文本内容，支持 str 或 OpenAI message content list。"""
+    """Extract text content from a string or an OpenAI message content list."""
     if isinstance(content, str):
         return content
     if not isinstance(content, list):
@@ -44,10 +44,10 @@ def load_query_workspace_map(workspace_hub_dir, workspace_base):
     query_to_workspace = {}
 
     if not workspace_hub_dir.exists():
-        print(f"找不到 workspace_hub_dir: {workspace_hub_dir}")
+        print(f"workspace_hub_dir not found: {workspace_hub_dir}")
         return query_to_workspace
 
-    print("正在加载 Query -> Workspace 映射...")
+    print("Loading Query -> Workspace mapping...")
     workspace_count = 0
     duplicate_count = 0
 
@@ -85,9 +85,9 @@ def load_query_workspace_map(workspace_hub_dir, workspace_base):
 
                 query_to_workspace[normalized_query] = workspace_label
 
-    print(f"成功加载 {workspace_count} 个 workspace，得到 {len(query_to_workspace)} 条 query 映射。")
+    print(f"Loaded {workspace_count} workspaces successfully and built {len(query_to_workspace)} query mappings.")
     if duplicate_count:
-        print(f"检测到 {duplicate_count} 条跨 workspace 重复 query，已保留首次出现的映射。")
+        print(f"Detected {duplicate_count} duplicate queries across workspaces; kept the first mapping encountered.")
 
     return query_to_workspace
 
@@ -128,11 +128,11 @@ def process_trajectory(line_str, query_to_workspace):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="提取 check 用的 intent/workspace/agent_final_output")
-    parser.add_argument("--input_file", required=True, help="输入 jsonl 文件路径，process_conversations脚本处理后的轨迹数据")
-    parser.add_argument("--workspace_hub_dir", required=True, help="workspace hub 根目录")
-    parser.add_argument("--workspace_base", required=True, help="真实 workspace 根目录")
-    parser.add_argument("--output_file", required=True, help="输出 jsonl 文件路径")
+    parser = argparse.ArgumentParser(description="Extract intent/workspace/agent_final_output for checking")
+    parser.add_argument("--input_file", required=True, help="Path to the input jsonl file containing trajectory data processed by process_conversations")
+    parser.add_argument("--workspace_hub_dir", required=True, help="Root directory of the workspace hub")
+    parser.add_argument("--workspace_base", required=True, help="Root directory of the real workspaces")
+    parser.add_argument("--output_file", required=True, help="Path to the output jsonl file")
     args = parser.parse_args()
 
     input_file = Path(args.input_file)
@@ -141,12 +141,12 @@ def main():
     output_file = Path(args.output_file)
 
     if not input_file.exists():
-        print(f"找不到输入文件: {input_file}")
+        print(f"Input file not found: {input_file}")
         sys.exit(1)
 
     query_to_workspace = load_query_workspace_map(workspace_hub_dir, workspace_base)
 
-    print(f"开始解析轨迹文件: {input_file}")
+    print(f"Starting to parse trajectory file: {input_file}")
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     processed = 0
@@ -161,8 +161,8 @@ def main():
                 out_f.write(json.dumps(result, ensure_ascii=False) + "\n")
                 processed += 1
 
-    print(f"解析完成！共成功匹配并处理了 {processed} 条记录。")
-    print(f"提取结果已保存至: {output_file}")
+    print(f"Parsing complete. Successfully matched and processed {processed} records.")
+    print(f"Extraction results have been saved to: {output_file}")
 
 
 if __name__ == "__main__":

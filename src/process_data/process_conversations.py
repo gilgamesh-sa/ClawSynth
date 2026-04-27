@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-将网关抓取数据处理成通用格式，方便阅读。
-处理 success_events_all.jsonl 文件:
-1. 按 user query 分组，保留每组中 messages 最长的记录
-2. 只保留 messages 和 tools 字段
-3. 将 response_obj 中的模型回复解析后拼到 messages 最后
-4. 统一 messages 格式为 [{"role": "system", "content": xxx}, {"role": "user", "content": xxx}, ...]
-5. 合并连续的 tool role 消息
+Process gateway-captured data into a generic, easier-to-read format.
+This script processes `success_events_all.jsonl` by:
+1. Grouping records by user query and keeping the record with the longest `messages` in each group.
+2. Keeping only the `messages` and `tools` fields.
+3. Parsing the model reply from `response_obj` and appending it to the end of `messages`.
+4. Normalizing `messages` into the format [{"role": "system", "content": xxx}, {"role": "user", "content": xxx}, ...].
+5. Merging consecutive `tool` role messages.
 """
 
 import json
@@ -20,7 +20,7 @@ def extract_user_query(messages):
         if msg.get("role") == "user":
             content = msg.get("content", "")
             if isinstance(content, list):
-                # [{"type": "text", "text": "..."}] 格式
+                # [{"type": "text", "text": "..."}] format
                 for item in content:
                     if isinstance(item, dict) and item.get("type") == "text":
                         return item.get("text", "")
@@ -49,7 +49,7 @@ def normalize_content(content):
 
 
 def parse_response_message(response_obj):
-    """从 response_obj 解析出最终的 assistant 回复消息"""
+    """Parse the final assistant reply message from response_obj."""
     choices = response_obj.get("choices", [])
     if not choices:
         return None
@@ -57,17 +57,17 @@ def parse_response_message(response_obj):
     msg = choices[0].get("message", {})
     result = {"role": "assistant"}
 
-    # 处理 content
+    # Handle content
     content = normalize_content(msg.get("content"))
     if content:
         result["content"] = content
 
-    # 保留思考过程
+    # Preserve reasoning content
     reasoning = msg.get("reasoning_content")
     if reasoning:
         result["reasoning_content"] = reasoning
 
-    # 处理 tool_calls
+    # Handle tool_calls
     tool_calls = msg.get("tool_calls")
     if tool_calls:
         result["tool_calls"] = tool_calls
@@ -86,7 +86,7 @@ def normalize_message(msg):
 
     result = {"role": role, "content": normalize_content(msg.get("content", ""))}
 
-    # 保留 assistant 的 tool_calls 和思考过程
+    # Preserve the assistant's tool_calls and reasoning content
     if role == "assistant":
         if msg.get("tool_calls"):
             result["tool_calls"] = msg["tool_calls"]
@@ -94,7 +94,7 @@ def normalize_message(msg):
         if reasoning:
             result["reasoning_content"] = reasoning
 
-    # 保留 tool 的 tool_call_id 和 name
+    # Preserve the tool's tool_call_id and name
     if role == "tool":
         if msg.get("tool_call_id"):
             result["tool_call_id"] = msg["tool_call_id"]
@@ -113,7 +113,7 @@ def merge_consecutive_tool_messages(messages):
     while i < len(messages):
         msg = messages[i]
         if msg["role"] == "tool":
-            # 收集所有连续的 tool 消息
+            # Collect all consecutive tool messages
             tool_group = [msg]
             j = i + 1
             while j < len(messages) and messages[j]["role"] == "tool":
@@ -121,10 +121,10 @@ def merge_consecutive_tool_messages(messages):
                 j += 1
 
             if len(tool_group) == 1:
-                # 单条 tool 消息，直接保留
+                # Keep a single tool message as-is
                 merged.append(msg)
             else:
-                # 多条连续 tool 消息，合并为列表格式
+                # Merge multiple consecutive tool messages into a list-style payload
                 content_list = [
                     {
                         "content": t.get("content", ""),
@@ -152,15 +152,15 @@ def process_record(record):
     response_obj = record.get("response_obj", {})
     tools = record.get("tools", [])
 
-    # 1. 标准化每条 message
+    # 1. Normalize each message
     normalized = [normalize_message(m) for m in messages]
 
-    # 2. 解析 response_obj 拼到最后
+    # 2. Parse response_obj and append it to the end
     resp_msg = parse_response_message(response_obj)
     if resp_msg:
         normalized.append(resp_msg)
 
-    # 3. 合并连续的 tool 消息
+    # 3. Merge consecutive tool messages
     normalized = merge_consecutive_tool_messages(normalized)
 
     return {"messages": normalized, "tools": tools}
@@ -176,7 +176,7 @@ def main():
     input_file = args.input_file
     output_file = args.output_file
 
-    print(f"读取文件: {input_file}")
+    print(f"Reading file: {input_file}")
 
     query_groups = defaultdict(list)
     line_count = 0
@@ -189,7 +189,7 @@ def main():
             try:
                 record = json.loads(line)
             except json.JSONDecodeError as e:
-                print(f"  跳过第 {line_num + 1} 行 (JSON 解析错误): {e}")
+                print(f"  Skipping line {line_num + 1} (JSON parse error): {e}")
                 continue
 
             query = extract_user_query(record.get("messages", []))
@@ -198,24 +198,24 @@ def main():
             line_count += 1
 
             if line_count % 500 == 0:
-                print(f"  已读取 {line_count} 条记录...")
+                print(f"  Loaded {line_count} records...")
 
-    print(f"总共读取 {line_count} 条记录, {len(query_groups)} 个不同的 query")
+    print(f"Loaded {line_count} records in total, with {len(query_groups)} distinct queries")
 
     output_count = 0
     with open(output_file, "w", encoding="utf-8") as f:
         for query, group in query_groups.items():
-            # 按 messages 数量降序排列，取最长的
+            # Sort by number of messages in descending order and keep the longest one
             group.sort(key=lambda x: x[0], reverse=True)
             best_msg_count, best_line, best_record = group[0]
 
-            # 处理这条记录
+            # Process this record
             processed = process_record(best_record)
             f.write(json.dumps(processed, ensure_ascii=False) + "\n")
             output_count += 1
 
-    print(f"处理完成! 输出 {output_count} 条记录到: {output_file}")
-    print(f"去重比例: {line_count} -> {output_count} ({output_count/line_count*100:.1f}%)")
+    print(f"Processing complete. Wrote {output_count} records to: {output_file}")
+    print(f"Deduplication ratio: {line_count} -> {output_count} ({output_count/line_count*100:.1f}%)")
 
 
 if __name__ == "__main__":
