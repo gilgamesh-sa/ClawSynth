@@ -57,6 +57,16 @@ FILTER_API_KEY=your_api_key_here
 GEN_QUERY_MODEL=glm-5.1
 GEN_QUERY_API_BASE=https://dashscope.aliyuncs.com/compatible-mode/v1
 GEN_QUERY_API_KEY=your_api_key_here
+
+# soft_verify 验证模型
+VERIFY_API_KEY=your_api_key_here
+VERIFY_MODEL=glm-5
+# VERIFY_API_BASE=https://open.bigmodel.cn/api/paas/v4
+VERIFY_TIMEOUT_SECONDS=120
+VERIFY_SOFT_AGENT_MAX_ROUNDS=20
+
+# soft_verify OCR 能力
+PADDLEOCR_AISTUDIO_ACCESS_TOKEN=your_paddleocr_aistudio_access_token
 ```
 
 另外需要确保 OpenClaw CLI 已经可用，并能看到可调用模型：
