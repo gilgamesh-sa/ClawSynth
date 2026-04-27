@@ -1,69 +1,72 @@
-## LiteLLM 网关抓取
+[![English](https://img.shields.io/badge/Language-English-blue)](./README.md)
+[![简体中文](https://img.shields.io/badge/语言-简体中文-red)](./README.zh-CN.md)
 
-这个目录用于通过 LiteLLM 代理转接大模型接口，并把 OpenClaw 调用模型时的原始请求与返回结果记录下来。
+## LiteLLM Gateway Capture
 
-直接通过 OpenClaw 本身通常拿不到完整的底层对话数据，而通过 LiteLLM 代理后。
-最终这些数据会被写入 `success_events_all.jsonl`，用于后续分析。
+This directory is used to proxy large-model requests through LiteLLM and record the raw requests and responses generated when OpenClaw calls the model.
 
-## 目录说明
+OpenClaw by itself usually does not expose the full low-level conversation payloads. With LiteLLM in front, the raw data is written to `success_events_all.jsonl` for later analysis.
+
+## Directory Overview
 
 - `litellm_config.yaml.example`
-  LiteLLM 代理配置模板。
+  Template LiteLLM proxy configuration.
 - `litellm_config.yaml`
-  你本地实际使用的 LiteLLM 配置文件。
+  Your actual local LiteLLM configuration.
 - `custom_callbacks.py`
-  自定义回调逻辑。当前会把成功请求写入 JSONL 文件。
+  Custom callback logic. It currently appends successful requests to a JSONL log.
 - `success_events_all.jsonl`
-  LiteLLM 成功请求日志，记录原始请求和响应。
+  LiteLLM success log containing raw requests and responses.
 - `litellm.log`
-  LiteLLM 服务启动日志。
+  LiteLLM startup and runtime log.
 
-## 在 uv 环境中安装 LiteLLM
+## Install LiteLLM in the uv Environment
 
-本项目推荐统一使用 `uv` 环境。由于这个目录下的回调脚本依赖：
+This project recommends using `uv` consistently. The callback script in this directory depends on:
 
 - `litellm`
 - `aiofiles`
 
-建议在项目根目录执行：
+Install them from the project root:
 
 ```bash
 uv add litellm aiofiles
 ```
 
-如果你只是想同步项目中已经声明好的依赖，也可以执行：
+If you only want to sync dependencies that are already declared, you can instead run:
 
 ```bash
 uv sync
 ```
 
-安装完成后，可以先确认 LiteLLM 是否已经在当前 uv 环境中可用：
+Then verify that LiteLLM is available inside the current `uv` environment:
 
 ```bash
 uv run litellm --help
 ```
 
-如果这条命令能正常输出帮助信息，说明 LiteLLM 已经成功加入本地 uv 环境。
+If that command prints the help text successfully, LiteLLM is installed correctly.
 
-## 配置 LiteLLM
+## Configure LiteLLM
 
+Start by copying the template:
 
 ```bash
 cp litellm_config/litellm_config.yaml.example litellm_config/litellm_config.yaml
 ```
 
-编辑 `litellm_config/litellm_config.yaml`，至少要配置下面几项：
+Edit `litellm_config/litellm_config.yaml` and at minimum configure:
 
 - `model_list`
-  你希望代理暴露给 OpenClaw 的模型列表。
+  The models you want the proxy to expose to OpenClaw.
 - `api_key`
-  上游模型服务的真实 API Key。
+  The real upstream API key.
 - `api_base`
-  上游模型服务地址。
+  The upstream model endpoint.
 - `master_key`
-  LiteLLM 代理自身的访问密钥。
+  The access key used by LiteLLM itself.
 
-当前模板示例：
+Current template example:
 
 ```yaml
 model_list:
@@ -94,9 +97,9 @@ general_settings:
   cors: True
 ```
 
-## 启动 LiteLLM 网关
+## Start the LiteLLM Gateway
 
-推荐在项目根目录执行下面命令：
+The recommended commands from the project root are:
 
 ```bash
 cd litellm_config
@@ -104,7 +107,7 @@ nohup ../.venv/bin/litellm --config litellm_config.yaml --port 2013 > litellm.lo
 cd ..
 ```
 
-如果你不想依赖 `.venv` 的固定路径，也可以直接用 `uv run`：
+If you do not want to rely on a fixed `.venv` path, you can use `uv run` instead:
 
 ```bash
 cd litellm_config
@@ -112,28 +115,28 @@ nohup uv run litellm --config litellm_config.yaml --port 2013 > litellm.log 2>&1
 cd ..
 ```
 
-启动后可以通过日志确认服务是否正常：
+After startup, inspect the log to confirm the service is healthy:
 
 ```bash
 tail -f litellm_config/litellm.log
 ```
 
-看到类似输出通常说明启动成功：
+Output like the following usually indicates success:
 
 ```bash
 Uvicorn running on http://0.0.0.0:2013
 POST /v1/chat/completions HTTP/1.1" 200 OK
 ```
 
-## 配置 OpenClaw 使用 LiteLLM 模型
+## Configure OpenClaw to Use LiteLLM
 
-接下来需要让 OpenClaw 不再直接调用上游模型，而是改为调用本地 LiteLLM 网关。
+Next, update OpenClaw so it calls the local LiteLLM gateway instead of the upstream provider directly.
 
-需要修改 OpenClaw 根目录下 `.openclaw/openclaw.json` 中的两部分。
+You need to edit two places in `.openclaw/openclaw.json`.
 
-### 1. 在 `models.providers` 中注册 LiteLLM Provider
+### 1. Register a LiteLLM provider under `models.providers`
 
-示例：
+Example:
 
 ```json
 {
@@ -170,15 +173,15 @@ POST /v1/chat/completions HTTP/1.1" 200 OK
 }
 ```
 
-这里的关键配置是：
+Important fields:
 
-- `baseUrl` 指向本地 LiteLLM 服务地址
-- `apiKey` 使用 `litellm_config.yaml` 中配置的 `master_key`
-- `models` 中列出你希望 OpenClaw 能看到的模型
+- `baseUrl` points to the local LiteLLM service
+- `apiKey` should match the `master_key` configured in `litellm_config.yaml`
+- `models` lists the model ids you want OpenClaw to see
 
-### 2. 在 `agents.defaults.models` 中注册别名
+### 2. Register aliases under `agents.defaults.models`
 
-示例：
+Example:
 
 ```json
 {
@@ -203,59 +206,55 @@ POST /v1/chat/completions HTTP/1.1" 200 OK
 }
 ```
 
-如果你打算让 `batch_openclaw.py` 或 `batch_filegen.py` 走 LiteLLM，那么对应的 `.env` 模型名也应该改成：
+If you want `batch_openclaw.py` or `batch_filegen.py` to use LiteLLM, the corresponding `.env` values should also use the LiteLLM-prefixed model ids:
 
 ```bash
 OPENCLAW_MODEL=litellm/glm-5-turbo
 GEN_OPENCLAW_MODEL=litellm/glm-5-turbo
 ```
 
-当然，具体值要和你在 `.openclaw/openclaw.json` 里注册的模型保持一致。
+Make sure these values match the models you registered in `.openclaw/openclaw.json`.
 
-## 如何验证是否配置成功
+## How to Verify the Setup
 
-完成配置后，建议按下面顺序检查：
+After configuration, a good validation sequence is:
 
-1. 启动 LiteLLM 网关
-2. 重启 OpenClaw
-3. 打开 OpenClaw TUI
-4. 使用 `/models` 查看是否能看到 `litellm/glm-5.1`、`litellm/glm-5-turbo`
-5. 切换到其中一个 LiteLLM 模型并发起一次正常对话
+1. Start the LiteLLM gateway.
+2. Restart OpenClaw.
+3. Open the OpenClaw TUI.
+4. Run `/models` and confirm that `litellm/glm-5.1` and `litellm/glm-5-turbo` are visible.
+5. Switch to one of the LiteLLM models and run a normal conversation.
 
-如果配置正确，通常会看到下面这些现象：
+If everything is configured correctly, you should usually observe:
 
-- OpenClaw 能正常回复
-- `litellm_config/litellm.log` 中出现：
+- OpenClaw responds normally
+- `litellm_config/litellm.log` contains lines such as:
 
 ```bash
 "POST /v1/chat/completions HTTP/1.1" 200 OK
 ```
 
-- `litellm_config/` 目录下出现或持续追加：
+- `litellm_config/success_events_all.jsonl` appears or keeps growing
 
-```bash
-success_events_all.jsonl
-```
+## Recommendation
 
-
-
-## 建议
-
-如果你后续会长期用 LiteLLM 抓轨迹，建议把：
+If you plan to capture traces with LiteLLM long term, it is worth standardizing both:
 
 - `OPENCLAW_MODEL`
 - `GEN_OPENCLAW_MODEL`
 
-都统一切到 `litellm/...` 前缀模型，这样 query 文件合成和正向轨迹生成两个阶段都可以统一从代理层抓到底层请求和返回结果。
+on `litellm/...` model ids, so both reverse file generation and forward trajectory generation are captured uniformly at the proxy layer.
 
-## 后期处理
-`success_events_all.jsonl` 是 LiteLLM 抓到的原始日志，信息比较全，但直接阅读不太方便。
+## Post-processing
 
-如果你想把它整理成更适合检查对话内容的格式，可以运行下面这条命令：
+`success_events_all.jsonl` is the raw LiteLLM capture. It is comprehensive, but not very convenient to inspect directly.
+
+To convert it into a more readable conversation-oriented format, run:
 
 ```bash
 uv run python src/process_data/process_conversations.py \
   --input_file ./litellm_config/success_events_all.jsonl \
   --output_file ./litellm_config/message.jsonl
 ```
-这个文件比原始日志更适合直接查看、抽样检查，或者继续做后续数据处理。
+
+That derived file is better for direct inspection, sampling, and downstream processing.

@@ -1,96 +1,98 @@
+[![English](https://img.shields.io/badge/Language-English-blue)](./README.md)
+[![简体中文](https://img.shields.io/badge/语言-简体中文-red)](./README.zh-CN.md)
+
 # ClawSynth
 
 <p align="center">
   <img src="./assets/logos/ClawSynth.png" alt="ClawSynth logo" width="400" height="250">
 </p>
 
+ClawSynth is a data synthesis and validation project for OpenClaw Agent workflows. It is used to batch-generate executable user queries, synthesize required local input files when a query depends on them, run OpenClaw to produce full conversation trajectories, and optionally validate those trajectories afterward.
 
-ClawSynth 是一个面向 OpenClaw Agent 的数据合成与验证项目，用来批量构造可执行的用户 query、为需要本地输入文件的 query 反向合成文件、调用 OpenClaw 生成完整对话轨迹，并在需要时对这些轨迹做后处理验证。
+The project can be viewed as four stages:
 
-当前项目的主流程可以分成四个阶段：
+- `Query synthesis`: generate natural-language queries from skill combinations and rewrite them with personas.
+- `Reverse file generation`: detect whether a query needs pre-existing local files and synthesize them with OpenClaw.
+- `Forward trajectory generation`: run OpenClaw with prepared queries, skills, and input files to produce final trajectories.
+- `Post-processing verification`: validate OpenClaw trajectories using raw LiteLLM logs, workspace state, and the final agent response.
 
-- `合成 query`：根据 skill 组合生成自然语言 query，并做人设改写。
-- `反向生成文件`：分析 query 是否需要本地输入文件，并用 OpenClaw 反向生成这些文件。
-- `正向轨迹生成`：把准备好的 query、skills 和输入文件交给 OpenClaw，生成最终对话轨迹。
-- `轨迹后处理验证`：通过 LiteLLM 网关抓取到的原始日志、workspace 状态和 agent 最终回复，对 OpenClaw 轨迹做自动化验证。
-
-推荐整体流程是：
+Recommended end-to-end flow:
 
 ```text
 skills
-  -> gen_query 生成 queries_persona.jsonl
-  -> batch_filegen 反向补齐输入文件
-  -> batch_openclaw 生成最终轨迹
-  -> LiteLLM success_events_all.jsonl / OpenClaw session 轨迹
-  -> soft_verify 生成验证结果
+  -> gen_query produces queries_persona.jsonl
+  -> batch_filegen backfills required input files
+  -> batch_openclaw produces final trajectories
+  -> LiteLLM success_events_all.jsonl / OpenClaw session traces
+  -> soft_verify produces verification results
 ```
 
-其中，`soft_verify` 验证模块会结合 query、workspace 状态和 agent 最终回复，生成验证计划并输出 `pass` / `review` / `fail` 结果。详细说明见 [src/soft_verify/README.md](./src/soft_verify/README.md)。
+The `soft_verify` module combines each query, workspace state, and final agent output to generate a verification plan and return `pass`, `review`, or `fail`. See [src/soft_verify/README.md](./src/soft_verify/README.md) for details.
 
-## 环境配置
+## Environment Setup
 
-本项目使用 Python `3.13.x`，推荐使用 `uv` 管理环境。
+This project uses Python `3.13.x` and recommends `uv` for environment management.
 
-如果本机还没有 uv，可以先安装 uv，具体安装方式参考 uv 官方文档。安装好后，在项目根目录执行：
+If `uv` is not installed yet, install it first. Then run the following from the project root:
 
 ```bash
 uv python install 3.13.5
 uv sync --frozen
 ```
 
-然后从示例环境变量文件创建本地 `.env`：
+Create a local `.env` from the example file:
 
 ```bash
 cp .env.example .env
 ```
 
-`.env` 中通常需要配置四类能力：
+The `.env` file typically needs the following groups of settings:
 
 ```bash
-# OpenClaw 正向轨迹生成模型
+# OpenClaw model for forward trajectory generation
 OPENCLAW_MODEL=litellm/glm-5-turbo
 
-# OpenClaw 反向生成输入文件模型
+# OpenClaw model for reverse input-file generation
 GEN_OPENCLAW_MODEL=ali-qwen/qwen3.6-plus
 
-# 反向文件生成前的预筛选模型
+# Pre-filter model used before file generation
 FILTER_MODEL=qwen3.6-plus
 FILTER_API_BASE=https://dashscope.aliyuncs.com/compatible-mode/v1
 FILTER_API_KEY=your_api_key_here
 
-# query 生成模型
+# Query generation model
 GEN_QUERY_MODEL=glm-5.1
 GEN_QUERY_API_BASE=https://dashscope.aliyuncs.com/compatible-mode/v1
 GEN_QUERY_API_KEY=your_api_key_here
 
-# soft_verify 验证模型
+# soft_verify model
 VERIFY_API_KEY=your_api_key_here
 VERIFY_MODEL=glm-5
 # VERIFY_API_BASE=https://open.bigmodel.cn/api/paas/v4
 VERIFY_TIMEOUT_SECONDS=120
 VERIFY_SOFT_AGENT_MAX_ROUNDS=20
 
-# soft_verify OCR 能力
+# soft_verify OCR capability
 PADDLEOCR_AISTUDIO_ACCESS_TOKEN=your_paddleocr_aistudio_access_token
 ```
 
-如果你希望启用 LiteLLM 网关抓取到底层模型最原始的请求和返回结果，还需要额外参考 [litellm_config/README.md](./litellm_config/README.md) 完成 LiteLLM 配置，并让 OpenClaw 改为通过 LiteLLM 代理调用模型。
+If you want LiteLLM to capture the raw upstream requests and responses, also follow [litellm_config/README.md](./litellm_config/README.md) and route OpenClaw through the LiteLLM proxy.
 
-另外需要确保 OpenClaw CLI 已经可用，并能看到可调用模型：
+Make sure the OpenClaw CLI is available and your models are visible:
 
 ```bash
 openclaw models list
 ```
 
-如果模型名和你的 OpenClaw 配置不一致，请以 `openclaw models list` 的输出为准修改 `.env`。
+If the model names differ from your local OpenClaw setup, use the output of `openclaw models list` as the source of truth and update `.env` accordingly.
 
-## 前期准备
+## Prerequisites
 
-项目中有两类 skill 资源需要先解压。
+There are two kinds of skill bundles that need to be unzipped before running the pipeline.
 
-### 解压文件生成 skill
+### Unzip file-generation skills
 
-`generator_skills/` 中的 zip 用于反向合成 query 所需的本地输入文件：
+The zip files in `generator_skills/` are used to synthesize local input files required by generated queries:
 
 ```bash
 cd generator_skills
@@ -98,7 +100,7 @@ unzip claw-input-file-generator.zip
 cd ..
 ```
 
-解压后应能看到：
+You should then see:
 
 ```text
 generator_skills/
@@ -107,9 +109,9 @@ generator_skills/
     ...
 ```
 
-### 解压普通 skills
+### Unzip regular skills
 
-`skills/` 中的 zip 是 query 生成和 OpenClaw 执行阶段会用到的普通能力：
+The zip files in `skills/` are the regular skills used during query generation and OpenClaw execution:
 
 ```bash
 cd skills
@@ -121,17 +123,16 @@ unzip weather-1.0.0.zip
 cd ..
 ```
 
-解压后每个 skill 目录下都应包含 `SKILL.md`。
+Each extracted skill directory should contain a `SKILL.md`. If the directories already exist, you do not need to unzip them again.
 
-如果这些目录已经存在，可以不用重复解压。
+You can also add more usable skills to diversify the sampled data.
 
-**您可以添加更多可用的skills来进行采样，这样可以丰富数据的类型。**
-
-## 目录和文件作用
+## Repository Layout
 
 ```text
 .
 ├── README.md
+├── README.zh-CN.md
 ├── .env.example
 ├── pyproject.toml
 ├── uv.lock
@@ -140,15 +141,18 @@ cd ..
 ├── litellm_config/
 ├── src/
 │   ├── README.md
+│   ├── README.zh-CN.md
 │   ├── batch_filegen.py
 │   ├── batch_openclaw.py
 │   ├── soft_verify/
 │   │   ├── README.md
+│   │   ├── README.zh-CN.md
 │   │   ├── step1_plan.py
 │   │   ├── step2_evaluate.py
 │   │   └── ...
 │   └── gen_query/
 │       ├── README.md
+│       ├── README.zh-CN.md
 │       ├── config.py
 │       ├── run_step0_to_step3.sh
 │       ├── step0_generate_random_workspaces.py
@@ -158,27 +162,27 @@ cd ..
 └── result/
 ```
 
-主要文件说明：
+Important files and directories:
 
-- `src/gen_query/README.md`：query 合成阶段的详细说明。
-- `src/README.md`：反向文件生成和正向轨迹生成两个 OpenClaw 阶段的详细说明。
-- `src/soft_verify/README.md`：对话轨迹验证模块的详细说明，包括 LiteLLM 日志整理、验证输入抽取和两步验证流程。
-- `litellm_config/README.md`：LiteLLM 网关抓取的配置说明，用于保留底层模型原始请求和返回结果。
-- `src/gen_query/config.py`：query 合成阶段的主要配置入口，包括 workspace 数量、skill 采样数、随机种子等。
-- `src/gen_query/run_step0_to_step3.sh`：一键执行 query 合成的 step0 到 step3。
-- `src/batch_filegen.py`：反向生成本地输入文件。
-- `src/batch_openclaw.py`：正向生成 OpenClaw 对话轨迹。
-- `skills/`：普通 skill 池，用于 query 生成和 OpenClaw 执行。
-- `generator_skills/`：文件合成专用 skill。
-- `result/`：建议用于存放每次实验的 workspace、filegen 结果和 openclaw 轨迹结果。
+- `src/gen_query/README.md`: detailed guide for the query synthesis stage.
+- `src/README.md`: detailed guide for reverse file generation and forward OpenClaw trajectory generation.
+- `src/soft_verify/README.md`: detailed guide for trajectory verification, including LiteLLM log processing and the two-step evaluation flow.
+- `litellm_config/README.md`: LiteLLM proxy setup for preserving raw model requests and responses.
+- `src/gen_query/config.py`: main configuration entry for query synthesis, including workspace count, skill sampling, and random seeds.
+- `src/gen_query/run_step0_to_step3.sh`: one-command runner for steps 0 through 3 of query synthesis.
+- `src/batch_filegen.py`: reverse generation of local input files.
+- `src/batch_openclaw.py`: forward generation of OpenClaw conversation traces.
+- `skills/`: regular skill pool for query generation and OpenClaw execution.
+- `generator_skills/`: skills dedicated to file synthesis.
+- `result/`: recommended output location for workspaces, file-generation results, and OpenClaw trajectories.
 
-## 快速启动
+## Quick Start
 
-下面给出一个从 query 合成到轨迹验证的推荐流程。路径可以按自己的实验名称调整，建议尽量使用绝对路径。
+Below is a recommended flow from query synthesis to trajectory verification. Adjust the paths for your own experiment names, and prefer absolute paths when possible.
 
-### 1. 生成 query
+### 1. Generate queries
 
-先检查 `src/gen_query/config.py` 中的采样参数，例如：
+First review the sampling-related parameters in `src/gen_query/config.py`, such as:
 
 - `WORKSPACES_TO_BUILD`
 - `MIN_SKILLS_PER_WORKSPACE`
@@ -187,7 +191,7 @@ cd ..
 - `BENCH_CONCURRENCY`
 - `REWRITE_WORKERS`
 
-然后运行：
+Then run:
 
 ```bash
 uv run bash src/gen_query/run_step0_to_step3.sh \
@@ -195,7 +199,7 @@ uv run bash src/gen_query/run_step0_to_step3.sh \
   --workspace-hub ./result/syn_data_test_v2/workspace_test
 ```
 
-执行完成后，每个 workspace 下会生成：
+After completion, each workspace will contain:
 
 ```text
 tmp_benchmark_queries.jsonl
@@ -203,11 +207,11 @@ queries.jsonl
 queries_persona.jsonl
 ```
 
-其中 `queries_persona.jsonl` 是后续阶段使用的 query 输入文件。
+The `queries_persona.jsonl` file is the query input used by later stages.
 
-### 2. 反向生成输入文件
+### 2. Reverse-generate input files
 
-有些 query 会要求处理本地图片、音频、文档、表格等输入文件。这个阶段会先筛选哪些 query 需要文件，再用 OpenClaw 合成这些文件。
+Some queries ask the agent to work with local images, audio, documents, spreadsheets, or other files. This stage first filters the queries that truly need files, then uses OpenClaw to synthesize them.
 
 ```bash
 PYTHONUNBUFFERED=1 nohup uv run python src/batch_filegen.py run \
@@ -219,18 +223,18 @@ PYTHONUNBUFFERED=1 nohup uv run python src/batch_filegen.py run \
   > ./result/syn_data_test_v2/filegen_run.log 2>&1 &
 ```
 
-这个阶段需要 `.env` 中配置：
+This stage expects the following `.env` settings:
 
 - `GEN_OPENCLAW_MODEL`
 - `FILTER_MODEL`
 - `FILTER_API_BASE`
 - `FILTER_API_KEY`
 
-完成后，建议把下一阶段的 `--workspace-hub` 指向这里的 `--workspace-base`，因为输入文件会生成到 filegen 的临时 workspace 中。
+When it finishes, the next stage should usually point `--workspace-hub` to this stage's `--workspace-base`, because the generated input files are written into the temporary filegen workspaces.
 
-### 3. 正向生成 OpenClaw 轨迹
+### 3. Generate forward OpenClaw traces
 
-将 query、skills 和反向生成的输入文件交给 OpenClaw，生成最终对话轨迹：
+Run OpenClaw with the queries, skills, and synthesized input files to produce the final conversation traces:
 
 ```bash
 PYTHONUNBUFFERED=1 nohup uv run python src/batch_openclaw.py run \
@@ -242,13 +246,13 @@ PYTHONUNBUFFERED=1 nohup uv run python src/batch_openclaw.py run \
   > ./result/syn_data_test_v2/openclaw_run.log 2>&1 &
 ```
 
-这个阶段需要 `.env` 中配置：
+This stage requires:
 
 - `OPENCLAW_MODEL`
 
-如果你希望获取到底层模型最原始的请求和返回结果，而不只是最终 session 轨迹文件，那么必须启用 `litellm_config/`，让 OpenClaw 通过 LiteLLM 网关调用模型。否则默认流程只能拿到 OpenClaw 导出的 session 轨迹，拿不到最底层的原始请求数据。详细说明见 [litellm_config/README.md](./litellm_config/README.md)。
+If you want the raw upstream model requests and responses instead of only the final session trace files, you must enable `litellm_config/` and let OpenClaw call the model through LiteLLM. Otherwise you will only get the default OpenClaw session export. See [litellm_config/README.md](./litellm_config/README.md).
 
-启用 LiteLLM 后，原始抓取结果会写入 `litellm_config/success_events_all.jsonl`。这个文件信息更完整，但不太适合直接阅读；如果你想把它转换成更易读的对话格式，可以执行：
+With LiteLLM enabled, the raw capture is appended to `litellm_config/success_events_all.jsonl`. To convert it into a more readable conversation format, run:
 
 ```bash
 uv run python src/process_data/process_conversations.py \
@@ -256,19 +260,19 @@ uv run python src/process_data/process_conversations.py \
   --output_file ./litellm_config/message.jsonl
 ```
 
-处理后的 `litellm_config/message.jsonl` 更适合直接查看、抽样检查，或者继续做后续数据处理。
+The processed `litellm_config/message.jsonl` file is easier to inspect and reuse in later processing.
 
-输出结果会保存在 `--results-dir` 中，包括：
+The output of this stage is stored in `--results-dir`, including:
 
 - `checkpoint.jsonl`
 - `summary.json`
-- 每个 workspace/domain 下的 OpenClaw session 轨迹文件
+- OpenClaw session trace files under each workspace or domain directory
 
-### 4. 轨迹后处理验证
+### 4. Post-process and verify traces
 
-如果你希望对正向轨迹生成结果做自动化验证，可以继续执行 `soft_verify` 模块。这个阶段依赖 LiteLLM 网关抓到的原始日志，因此推荐在正向轨迹生成阶段就启用 LiteLLM。
+If you want automated checks for the forward-generated traces, continue with the `soft_verify` module. This stage depends on the raw logs captured by LiteLLM, so it is best to enable LiteLLM during forward trajectory generation.
 
-先把 LiteLLM 原始日志整理并抽取为统一验证输入：
+First, normalize the raw LiteLLM logs and extract them into the unified verification input format:
 
 ```bash
 uv run python src/process_data/process_conversations.py \
@@ -282,7 +286,7 @@ uv run python src/process_data/extract_for_check.py \
   --output_file ./result/syn_data_test_v2/tasks_for_check.jsonl
 ```
 
-然后执行两步验证：
+Then run the two verification steps:
 
 ```bash
 uv run python src/soft_verify/step1_plan.py \
@@ -296,25 +300,25 @@ uv run python src/soft_verify/step2_evaluate.py \
   --workers 8
 ```
 
-最终会得到带有 `verdict`、`score` 和 `llm_check_results` 的验证结果。完整说明见 [src/soft_verify/README.md](./src/soft_verify/README.md)。
+The final output contains fields such as `verdict`, `score`, and `llm_check_results`. See [src/soft_verify/README.md](./src/soft_verify/README.md) for the full verification workflow.
 
-## 常用管理命令
+## Useful Commands
 
-查看反向文件生成进度：
+Check reverse file-generation progress:
 
 ```bash
 uv run python src/batch_filegen.py status \
   --workspace-hub ./result/syn_data_test_v2/workspace_test
 ```
 
-清理反向文件生成残留 agents：
+Clean up leftover reverse file-generation agents:
 
 ```bash
 uv run python src/batch_filegen.py cleanup \
   --workspace-hub ./result/syn_data_test_v2/workspace_test
 ```
 
-查看正向轨迹生成进度：
+Check forward trajectory generation progress:
 
 ```bash
 uv run python src/batch_openclaw.py status \
@@ -323,7 +327,7 @@ uv run python src/batch_openclaw.py status \
   --results-dir ./result/syn_data_test_v2/openclaw_result
 ```
 
-清理正向轨迹生成残留 agents：
+Clean up leftover forward trajectory generation agents:
 
 ```bash
 uv run python src/batch_openclaw.py cleanup \
@@ -332,13 +336,13 @@ uv run python src/batch_openclaw.py cleanup \
   --results-dir ./result/syn_data_test_v2/openclaw_result
 ```
 
-## 更多说明
+## More Documentation
 
-更详细的阶段说明请看：
+For deeper stage-specific details, see:
 
 - [src/gen_query/README.md](./src/gen_query/README.md)
 - [src/README.md](./src/README.md)
 - [litellm_config/README.md](./litellm_config/README.md)
 - [src/soft_verify/README.md](./src/soft_verify/README.md)
 
-如果要重新跑某个阶段，建议先确认对应阶段的输出目录、日志文件和 checkpoint 行为，避免把不同实验的数据混在一起。
+If you rerun any stage, double-check its output directory, logs, and checkpoint behavior first so you do not mix artifacts from different experiments.

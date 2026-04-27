@@ -1,88 +1,92 @@
+[![English](https://img.shields.io/badge/Language-English-blue)](./README.md)
+[![简体中文](https://img.shields.io/badge/语言-简体中文-red)](./README.zh-CN.md)
+
 # soft_verify
 
-`soft_verify` 是 ClawSynth 中用于验证 OpenClaw 对话轨迹质量的模块。它的目标不是检查“模型有没有完全按固定模板输出”，而是结合：
+`soft_verify` is the ClawSynth module used to validate the quality of OpenClaw conversation trajectories. Its goal is not to check whether the model followed a rigid fixed template. Instead, it combines:
 
-- 用户 query
-- 对应 workspace 中的文件状态
-- agent 最终回复
+- the user query
+- the file state inside the corresponding workspace
+- the final agent response
 
-生成一组可执行的验证检查项，再由一个带工具调用能力的验证 agent 对这些检查项进行打分，最终输出 `pass` / `review` / `fail` 的验证结果。
+to generate executable validation checks, then lets a tool-enabled verification agent score those checks and return a final `pass`, `review`, or `fail`.
 
-当前实现偏向宽松验证，适合大规模数据清洗、抽样检查和初步过滤；如果你需要更严格的判定标准，可以在提示词、打分阈值或工具逻辑上继续收紧。
+The current implementation is intentionally lenient and works well for large-scale data cleaning, spot checks, and initial filtering. If you need stricter evaluation, tighten the prompts, thresholds, or tool logic.
 
-## 验证流程概览
+## Verification Flow Overview
 
-完整链路分成 4 步：
+The full pipeline has four steps:
 
-1. 通过 LiteLLM 网关抓取 OpenClaw 正向轨迹生成阶段的原始日志
-2. 把原始日志整理成更易处理的对话格式
-3. 抽取 `intent`、`workspace`、`agent_final_output`，构造成统一验证输入
-4. 执行 `step1_plan.py` 和 `step2_evaluate.py`，得到最终验证结果
+1. Capture raw logs from the OpenClaw forward-generation stage through LiteLLM.
+2. Normalize the raw logs into a more stable conversation format.
+3. Extract `intent`, `workspace`, and `agent_final_output` into a unified verification input.
+4. Run `step1_plan.py` and `step2_evaluate.py` to get the final verdict.
 
-推荐流程如下：
+Recommended flow:
 
 ```text
-OpenClaw 正向轨迹生成
+OpenClaw forward trajectory generation
   -> LiteLLM success_events_all.jsonl
-  -> process_conversations.py 生成 message.jsonl
-  -> extract_for_check.py 生成 tasks.jsonl
-  -> step1_plan.py 生成 plan.jsonl
-  -> step2_evaluate.py 生成 result.jsonl
+  -> process_conversations.py produces message.jsonl
+  -> extract_for_check.py produces tasks.jsonl
+  -> step1_plan.py produces plan.jsonl
+  -> step2_evaluate.py produces result.jsonl
 ```
 
-## 运行前准备
+## Before You Run
 
-### 1. 主项目环境
+### 1. Main project environment
 
-`soft_verify` 的依赖已经并入主项目的 `pyproject.toml`。在仓库根目录执行：
+The dependencies for `soft_verify` are already included in the main project's `pyproject.toml`. From the repository root, run:
 
 ```bash
 uv sync
 ```
 
-后续命令都建议从仓库根目录运行，并统一使用主项目的 `uv` 环境。
+It is recommended to run all later commands from the repository root and use the shared `uv` environment.
 
-### 2. 环境变量
-至少需要配置：
+### 2. Environment variables
+
+At minimum, configure:
 
 ```bash
-# 验证模型
+# Verification model
 VERIFY_API_KEY=your_api_key_here
 VERIFY_MODEL=glm-5
 # VERIFY_API_BASE=https://open.bigmodel.cn/api/paas/v4
 VERIFY_TIMEOUT_SECONDS=120
 VERIFY_SOFT_AGENT_MAX_ROUNDS=20
 
-# OCR 能力
+# OCR capability
 PADDLEOCR_AISTUDIO_ACCESS_TOKEN=your_paddleocr_aistudio_access_token
 ```
 
-其中：
+Where:
 
-- `VERIFY_*`：用于生成验证计划和执行 soft-check agent
-- `PADDLEOCR_AISTUDIO_ACCESS_TOKEN`：用于验证过程中读取图片或 PDF 中的文本内容
+- `VERIFY_*` is used to generate verification plans and run the soft-check agent
+- `PADDLEOCR_AISTUDIO_ACCESS_TOKEN` is used when verification needs to read text from images or PDFs
 
-`PADDLEOCR_AISTUDIO_ACCESS_TOKEN` 可以参考百度 AI Studio 文档获取：`https://ai.baidu.com/ai-doc/AISTUDIO/Cmkz2m0ma`
+You can obtain the OCR token from the Baidu AI Studio documentation: `https://ai.baidu.com/ai-doc/AISTUDIO/Cmkz2m0ma`
 
-### 3. LiteLLM 网关原始日志
+### 3. LiteLLM raw logs
 
-如果你没有启用 LiteLLM 网关抓取到底层模型的原始请求与返回结果，就无法使用这里这套验证流程。
+If you did not enable LiteLLM to capture the raw upstream requests and responses, this verification workflow cannot run.
 
-详细配置方式见根目录下的 [litellm_config/README.md](/mnt/d/project/clawsynth/litellm_config/README.md)。
+For setup details, see [../../litellm_config/README.md](../../litellm_config/README.md).
 
-验证流程依赖的原始日志文件是：
+The raw input file required by the verification flow is:
 
 ```text
 litellm_config/success_events_all.jsonl
 ```
 
-这个文件保存的是 LiteLLM 抓到的原始调用日志。
+This file contains the raw LiteLLM capture.
 
-## 输入数据准备
+## Prepare Input Data
 
-### 第一步：整理 LiteLLM 原始轨迹
+### Step 1: normalize the LiteLLM raw trace
 
-先把 `success_events_all.jsonl` 整理成更易读、更稳定的对话格式：
+Convert `success_events_all.jsonl` into a more readable and stable conversation format:
 
 ```bash
 uv run python src/process_data/process_conversations.py \
@@ -90,15 +94,15 @@ uv run python src/process_data/process_conversations.py \
   --output_file ./litellm_config/message.jsonl
 ```
 
-输出文件：
+Output file:
 
 ```text
 litellm_config/message.jsonl
 ```
 
-### 第二步：转换为 soft_verify 统一输入格式
+### Step 2: convert into the unified soft_verify input format
 
-然后把对话轨迹转换成 `soft_verify` 使用的统一输入格式：
+Then convert the conversation trace into the format expected by `soft_verify`:
 
 ```bash
 uv run python src/process_data/extract_for_check.py \
@@ -108,35 +112,35 @@ uv run python src/process_data/extract_for_check.py \
   --output_file ./result/syn_data_test_v2/tasks_for_check.jsonl
 ```
 
-参数说明：
+Argument notes:
 
-- `--input_file`：上一步 `process_conversations.py` 生成的 `message.jsonl`
-- `--workspace_hub_dir`：上游 query 数据所在的 `workspace_hub`，通常对应 [src/README.md](/mnt/d/project/clawsynth/src/README.md) 中正向轨迹生成阶段读取的原始 workspace 目录
-- `--workspace_base`：正向轨迹生成阶段真正运行 OpenClaw 的 `workspace_base`
-- `--output_file`：输出给 `soft_verify` 使用的 JSONL 文件
+- `--input_file`: the `message.jsonl` created in the previous step
+- `--workspace_hub_dir`: the upstream query `workspace_hub`
+- `--workspace_base`: the real `workspace_base` used when forward trajectories were generated
+- `--output_file`: output JSONL consumed by `soft_verify`
 
-这里要特别注意：
+Two details matter a lot here:
 
-- `--workspace_hub_dir` 和 `--workspace_base` 必须与实际那一轮 OpenClaw 正向轨迹生成使用的目录对应
-- 如果路径对应错了，后面验证时拿到的 workspace 状态就会不准确
+- `--workspace_hub_dir` and `--workspace_base` must match the directories used by the actual OpenClaw run you want to verify
+- if those paths are wrong, the workspace snapshot seen during verification will be inaccurate
 
-输出文件中的每条记录大致包含：
+Each output row roughly looks like:
 
 ```json
 {
-  "intent": "用户 query 文本",
+  "intent": "user query text",
   "workspace": "/abs/path/to/workspace",
-  "agent_final_output": "agent 最终回复"
+  "agent_final_output": "final agent response"
 }
 ```
 
-## 执行验证
+## Run Verification
 
-验证分成两个 step。
+Verification is split into two steps.
 
-### Step 1：生成验证计划
+### Step 1: generate the verification plan
 
-`step1_plan.py` 会根据 `intent`、`workspace` 和 `agent_final_output` 生成一组 `llm_checks`，也就是后续验证 agent 要执行的检查项。
+`step1_plan.py` uses `intent`, `workspace`, and `agent_final_output` to generate a list of `llm_checks` for the later verification agent.
 
 ```bash
 uv run python src/soft_verify/step1_plan.py \
@@ -145,33 +149,33 @@ uv run python src/soft_verify/step1_plan.py \
   --workers 8
 ```
 
-常用参数：
+Common arguments:
 
-- `--input`：上一步生成的统一输入 JSONL
-- `--output`：验证计划输出文件
-- `--workers`：并发 worker 数，默认 `8`
-- `--path-mode`：路径解析模式，默认 `auto`
+- `--input`: unified input JSONL from the previous step
+- `--output`: output file for the verification plan
+- `--workers`: worker concurrency, default `8`
+- `--path-mode`: path resolution mode, default `auto`
 
-`--path-mode` 支持：
+Supported `--path-mode` values:
 
 - `auto`
 - `workspace-only`
 - `absolute-priority`
 
-一般保持默认的 `auto` 即可。
+In most cases, the default `auto` is fine.
 
-输出文件中的核心字段包括：
+Core fields in the output include:
 
 - `intent`
 - `workspace`
 - `agent_final_output`
 - `llm_checks`
 
-如果某条记录在 step1 失败，输出里也会保留失败记录，包含错误信息，方便后续排查。
+If a row fails during step 1, the output still keeps the failed record together with its error details for later debugging.
 
-### Step 2：执行验证打分
+### Step 2: execute the checks and score the result
 
-`step2_evaluate.py` 会读取 step1 生成的 `llm_checks`，调用带工具能力的验证 agent，对每条检查项执行验证并输出最终分数与结论。
+`step2_evaluate.py` reads the `llm_checks` from step 1, runs a tool-enabled verification agent, and outputs the final score and verdict.
 
 ```bash
 uv run python src/soft_verify/step2_evaluate.py \
@@ -180,9 +184,21 @@ uv run python src/soft_verify/step2_evaluate.py \
   --workers 8
 ```
 
-常用参数：
+Common arguments:
 
-- `--input`：`step1_plan.py` 的输出文件
-- `--output`：最终验证结果输出文件
-- `--workers`：并发 worker 数，默认 `8`
-- `--path-mode`：路径解析模式，默认 `auto`
+- `--input`: output from `step1_plan.py`
+- `--output`: final verification result file
+- `--workers`: worker concurrency, default `8`
+- `--path-mode`: path resolution mode, default `auto`
+
+The final result typically includes:
+
+- `verdict`
+- `score`
+- `llm_check_results`
+
+## Additional Notes
+
+- This workflow depends on LiteLLM raw logs, so it is best to enable LiteLLM during OpenClaw forward trajectory generation.
+- If you only have OpenClaw session traces and do not have `success_events_all.jsonl`, this workflow cannot run end to end.
+- If you want to make the evaluation stricter over time, the best starting points are the prompts and thresholds in `step1_plan.py` and `step2_evaluate.py`.
