@@ -5,15 +5,14 @@
 </p>
 
 
-ClawSynth 是一个面向 OpenClaw Agent 的数据合成项目，用来批量构造可执行的用户 query、为需要本地输入文件的 query 反向合成文件，并最终调用 OpenClaw 生成完整对话轨迹。
+ClawSynth 是一个面向 OpenClaw Agent 的数据合成与验证项目，用来批量构造可执行的用户 query、为需要本地输入文件的 query 反向合成文件、调用 OpenClaw 生成完整对话轨迹，并在需要时对这些轨迹做后处理验证。
 
-当前项目主要包含三个阶段：
+当前项目的主流程可以分成四个阶段：
 
 - `合成 query`：根据 skill 组合生成自然语言 query，并做人设改写。
 - `反向生成文件`：分析 query 是否需要本地输入文件，并用 OpenClaw 反向生成这些文件。
 - `正向轨迹生成`：把准备好的 query、skills 和输入文件交给 OpenClaw，生成最终对话轨迹。
-
-此外，项目还提供一个独立的 `soft_verify` 验证模块，用来对 OpenClaw 生成出的对话轨迹做后处理验证。它会结合 query、workspace 状态和 agent 最终回复，生成验证计划并输出 `pass` / `review` / `fail` 结果。详细说明见 [src/soft_verify/README.md](/mnt/d/project/clawsynth/src/soft_verify/README.md)。
+- `轨迹后处理验证`：通过 LiteLLM 网关抓取到的原始日志、workspace 状态和 agent 最终回复，对 OpenClaw 轨迹做自动化验证。
 
 推荐整体流程是：
 
@@ -22,7 +21,11 @@ skills
   -> gen_query 生成 queries_persona.jsonl
   -> batch_filegen 反向补齐输入文件
   -> batch_openclaw 生成最终轨迹
+  -> LiteLLM success_events_all.jsonl / OpenClaw session 轨迹
+  -> soft_verify 生成验证结果
 ```
+
+其中，`soft_verify` 验证模块会结合 query、workspace 状态和 agent 最终回复，生成验证计划并输出 `pass` / `review` / `fail` 结果。详细说明见 [src/soft_verify/README.md](./src/soft_verify/README.md)。
 
 ## 环境配置
 
@@ -41,7 +44,7 @@ uv sync --frozen
 cp .env.example .env
 ```
 
-`.env` 中需要配置三类模型：
+`.env` 中通常需要配置四类能力：
 
 ```bash
 # OpenClaw 正向轨迹生成模型
@@ -70,6 +73,8 @@ VERIFY_SOFT_AGENT_MAX_ROUNDS=20
 # soft_verify OCR 能力
 PADDLEOCR_AISTUDIO_ACCESS_TOKEN=your_paddleocr_aistudio_access_token
 ```
+
+如果你希望启用 LiteLLM 网关抓取到底层模型最原始的请求和返回结果，还需要额外参考 [litellm_config/README.md](./litellm_config/README.md) 完成 LiteLLM 配置，并让 OpenClaw 改为通过 LiteLLM 代理调用模型。
 
 另外需要确保 OpenClaw CLI 已经可用，并能看到可调用模型：
 
@@ -132,10 +137,16 @@ cd ..
 ├── uv.lock
 ├── skills/
 ├── generator_skills/
+├── litellm_config/
 ├── src/
 │   ├── README.md
 │   ├── batch_filegen.py
 │   ├── batch_openclaw.py
+│   ├── soft_verify/
+│   │   ├── README.md
+│   │   ├── step1_plan.py
+│   │   ├── step2_evaluate.py
+│   │   └── ...
 │   └── gen_query/
 │       ├── README.md
 │       ├── config.py
@@ -152,6 +163,7 @@ cd ..
 - `src/gen_query/README.md`：query 合成阶段的详细说明。
 - `src/README.md`：反向文件生成和正向轨迹生成两个 OpenClaw 阶段的详细说明。
 - `src/soft_verify/README.md`：对话轨迹验证模块的详细说明，包括 LiteLLM 日志整理、验证输入抽取和两步验证流程。
+- `litellm_config/README.md`：LiteLLM 网关抓取的配置说明，用于保留底层模型原始请求和返回结果。
 - `src/gen_query/config.py`：query 合成阶段的主要配置入口，包括 workspace 数量、skill 采样数、随机种子等。
 - `src/gen_query/run_step0_to_step3.sh`：一键执行 query 合成的 step0 到 step3。
 - `src/batch_filegen.py`：反向生成本地输入文件。
@@ -162,7 +174,7 @@ cd ..
 
 ## 快速启动
 
-下面给出一个从 query 合成到最终轨迹生成的推荐流程。路径可以按自己的实验名称调整，建议尽量使用绝对路径。
+下面给出一个从 query 合成到轨迹验证的推荐流程。路径可以按自己的实验名称调整，建议尽量使用绝对路径。
 
 ### 1. 生成 query
 
@@ -252,6 +264,40 @@ uv run python src/process_data/process_conversations.py \
 - `summary.json`
 - 每个 workspace/domain 下的 OpenClaw session 轨迹文件
 
+### 4. 轨迹后处理验证
+
+如果你希望对正向轨迹生成结果做自动化验证，可以继续执行 `soft_verify` 模块。这个阶段依赖 LiteLLM 网关抓到的原始日志，因此推荐在正向轨迹生成阶段就启用 LiteLLM。
+
+先把 LiteLLM 原始日志整理并抽取为统一验证输入：
+
+```bash
+uv run python src/process_data/process_conversations.py \
+  --input_file ./litellm_config/success_events_all.jsonl \
+  --output_file ./litellm_config/message.jsonl
+
+uv run python src/process_data/extract_for_check.py \
+  --input_file ./litellm_config/message.jsonl \
+  --workspace_hub_dir ./result/syn_data_test_v2/filegen_workspace \
+  --workspace_base ./result/syn_data_test_v2/openclaw_workspace \
+  --output_file ./result/syn_data_test_v2/tasks_for_check.jsonl
+```
+
+然后执行两步验证：
+
+```bash
+uv run python src/soft_verify/step1_plan.py \
+  --input ./result/syn_data_test_v2/tasks_for_check.jsonl \
+  --output ./result/syn_data_test_v2/step1_output.jsonl \
+  --workers 8
+
+uv run python src/soft_verify/step2_evaluate.py \
+  --input ./result/syn_data_test_v2/step1_output.jsonl \
+  --output ./result/syn_data_test_v2/step2_output.jsonl \
+  --workers 8
+```
+
+最终会得到带有 `verdict`、`score` 和 `llm_check_results` 的验证结果。完整说明见 [src/soft_verify/README.md](./src/soft_verify/README.md)。
+
 ## 常用管理命令
 
 查看反向文件生成进度：
@@ -292,5 +338,7 @@ uv run python src/batch_openclaw.py cleanup \
 
 - [src/gen_query/README.md](./src/gen_query/README.md)
 - [src/README.md](./src/README.md)
+- [litellm_config/README.md](./litellm_config/README.md)
+- [src/soft_verify/README.md](./src/soft_verify/README.md)
 
 如果要重新跑某个阶段，建议先确认对应阶段的输出目录、日志文件和 checkpoint 行为，避免把不同实验的数据混在一起。

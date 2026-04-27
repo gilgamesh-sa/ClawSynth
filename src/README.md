@@ -299,4 +299,4 @@ python src/batch_openclaw.py cleanup \
 虽然 `cleanup` / `reset` / `status` 也复用了相同参数接口，但最关键的是 `--workspace-hub` 要和本次批处理数据对应，否则脚本无法正确识别 domain 集合。
 
 
-如果你希望在轨迹生成完成后继续做自动化质量验证，可以使用 `src/soft_verify/` 下的验证模块。它会基于 LiteLLM 网关抓取到的原始日志、workspace 状态和 agent 最终回复，对每条轨迹生成验证结果。详细使用方式见 [src/soft_verify/README.md](/mnt/d/project/clawsynth/src/soft_verify/README.md)。
+如果你希望在轨迹生成完成后继续做自动化质量验证，可以使用 `src/soft_verify/` 下的验证模块。它会基于 LiteLLM 网关抓取到的原始日志、workspace 状态和 agent 最终回复，对每条轨迹生成验证结果。详细使用方式见 [src/soft_verify/README.md](./soft_verify/README.md)。

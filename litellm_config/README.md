@@ -2,14 +2,8 @@
 
 这个目录用于通过 LiteLLM 代理转接大模型接口，并把 OpenClaw 调用模型时的原始请求与返回结果记录下来。
 
-直接通过 OpenClaw 本身通常拿不到完整的底层对话数据，而通过 LiteLLM 代理后，我们可以在代理层抓取：
-
-- 发给模型的 `system` / `messages`
-- 使用到的 `tools`
-- 模型原始返回 `response_obj`
-- 请求元信息和耗时
-
-最终这些数据会被写入 `success_events_all.jsonl`，用于后续分析和数据回放。
+直接通过 OpenClaw 本身通常拿不到完整的底层对话数据，而通过 LiteLLM 代理后。
+最终这些数据会被写入 `success_events_all.jsonl`，用于后续分析。
 
 ## 目录说明
 
@@ -53,13 +47,12 @@ uv run litellm --help
 
 ## 配置 LiteLLM
 
-先从模板复制出本地配置文件：
 
 ```bash
 cp litellm_config/litellm_config.yaml.example litellm_config/litellm_config.yaml
 ```
 
-然后编辑 `litellm_config/litellm_config.yaml`，至少要配置下面几项：
+编辑 `litellm_config/litellm_config.yaml`，至少要配置下面几项：
 
 - `model_list`
   你希望代理暴露给 OpenClaw 的模型列表。
@@ -100,12 +93,6 @@ general_settings:
   log_level: "debug"
   cors: True
 ```
-
-需要重点注意：
-
-- `callbacks` 当前写的是 `custom_callbacks.proxy_handler_instance`
-- 因此建议在 `litellm_config/` 目录下启动 LiteLLM，确保这个模块能被正确导入
-- `master_key` 要和 OpenClaw 里的 `apiKey` 保持一致
 
 ## 启动 LiteLLM 网关
 
