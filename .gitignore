@@ -20,8 +20,12 @@ build/
 Thumbs.db
 
 # Generated outputs
-result/
+result/*
 *.log
+!result/syn_data_test_v3/
+!result/syn_data_test_v3/**
+result/syn_data_test_v3/**/skills/
+result/syn_data_test_v3/**/skills/**
 
 # LiteLLM local config
 litellm_config/*.yaml

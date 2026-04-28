@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 SKILL_HUB_ARGS=("/mnt/d/project/ClawSynth/skills")
-WORKSPACE_HUB="/mnt/d/project/ClawSynth/result/syn_data_test_v2/workspace_test"
+WORKSPACE_HUB="/mnt/d/project/ClawSynth/result/syn_data_test_v3/workspace_test"
 
 usage() {
   cat <<'EOF'
