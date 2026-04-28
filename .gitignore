@@ -26,7 +26,9 @@ result/*
 !result/syn_data_test_v3/**
 result/syn_data_test_v3/**/skills/
 result/syn_data_test_v3/**/skills/**
-
+result/syn_data_test_v3/filegen_result
+result/syn_data_test_v3/openclaw_result
+result/syn_data_test_v3/*.log
 # LiteLLM local config
 litellm_config/*.yaml
 litellm_config/*.jsonl
