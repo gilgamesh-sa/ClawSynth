@@ -1,0 +1,89 @@
+nohup: ignoring input
+============================================================
+Benchmark input file generator (batch version, concurrent across workspaces)
+  model: ali-qwen/qwen3.6-plus
+  prefilter model: qwen3.6-plus
+  prefilter workers: 1
+  cross-workspace concurrency: 5
+  within each workspace: serial
+  input file: queries_persona.jsonl
+  workspace_hub: /mnt/d/project/ClawSynth/result/syn_data_test_v3/workspace_test
+  temporary workspace: /mnt/d/project/ClawSynth/result/syn_data_test_v3/filegen_workspace_base
+  results directory: /mnt/d/project/ClawSynth/result/syn_data_test_v3/filegen_result
+  skills source: /mnt/d/project/ClawSynth/generator_skills
+============================================================
+
+📂 Found 5 workspace directories
+
+📦 workspace_test001: 1 records, 0 completed, 1 pending
+📦 workspace_test003: 1 records, 0 completed, 1 pending
+
+📦 workspace_test002: 1 records, 0 completed, 1 pending
+
+📦 workspace_test004: 1 records, 0 completed, 1 pending
+
+📦 workspace_test005: 1 records, 0 completed, 1 pending
+
+  workspace_test002 prefilter:   0%|          | 0/1 [00:00<?, ?q/s] 
+  workspace_test005 prefilter:   0%|          | 0/1 [00:00<?, ?q/s] [A
+
+
+  workspace_test003 prefilter:   0%|          | 0/1 [00:00<?, ?q/s] [A[A[A
+
+  workspace_test001 prefilter:   0%|          | 0/1 [00:00<?, ?q/s] [A[A
+
+
+
+  workspace_test004 prefilter:   0%|          | 0/1 [00:00<?, ?q/s] [A[A[A[A
+
+
+  workspace_test003 prefilter:   0%|          | 0/1 [00:02<?, ?q/s] , need=1, skip=0[A[A[A
+
+
+  workspace_test003 prefilter: 100%|██████████| 1/1 [00:02<00:00,  2.15s/q] , need=1, skip=0[A[A[A  workspace_test003 prefilter: 100%|██████████| 1/1 [00:02<00:00,  2.16s/q] , need=1, skip=0
+   📊 Prefilter complete: 1 need generation, 0 skipped
+
+  workspace_test005 prefilter:   0%|          | 0/1 [00:03<?, ?q/s] , need=1, skip=0[A
+  workspace_test005 prefilter: 100%|██████████| 1/1 [00:03<00:00,  3.14s/q] , need=1, skip=0[A  workspace_test005 prefilter: 100%|██████████| 1/1 [00:03<00:00,  3.15s/q] , need=1, skip=0
+   📊 Prefilter complete: 1 need generation, 0 skipped
+
+
+
+
+  workspace_test004 prefilter:   0%|          | 0/1 [00:03<?, ?q/s] , need=0, skip=1[A[A[A[A
+
+
+
+  workspace_test004 prefilter: 100%|██████████| 1/1 [00:03<00:00,  3.50s/q] , need=0, skip=1[A[A[A[A  workspace_test004 prefilter: 100%|██████████| 1/1 [00:03<00:00,  3.50s/q] , need=0, skip=1
+   📊 Prefilter complete: 0 need generation, 1 skipped
+  workspace_test002 prefilter:   0%|          | 0/1 [00:04<?, ?q/s] , need=0, skip=1  workspace_test002 prefilter: 100%|██████████| 1/1 [00:04<00:00,  4.10s/q] , need=0, skip=1  workspace_test002 prefilter: 100%|██████████| 1/1 [00:04<00:00,  4.10s/q] , need=0, skip=1
+   📊 Prefilter complete: 0 need generation, 1 skipped
+
+
+  workspace_test001 prefilter:   0%|          | 0/1 [00:04<?, ?q/s] , need=0, skip=1[A[A
+
+  workspace_test001 prefilter: 100%|██████████| 1/1 [00:04<00:00,  4.90s/q] , need=0, skip=1[A[A  workspace_test001 prefilter: 100%|██████████| 1/1 [00:04<00:00,  4.91s/q] , need=0, skip=1
+   📊 Prefilter complete: 0 need generation, 1 skipped
+   ✅ workspace_test002: everything was skipped, no need to call OpenClaw
+   ✅ workspace_test001: everything was skipped, no need to call OpenClaw
+   ✅ workspace_test004: everything was skipped, no need to call OpenClaw
+  📦 Creating agent: fg_workspace_test003
+     workspace: /mnt/d/project/ClawSynth/result/syn_data_test_v3/filegen_workspace_base/workspace_test003_workspace
+  📦 Creating agent: fg_workspace_test005
+     workspace: /mnt/d/project/ClawSynth/result/syn_data_test_v3/filegen_workspace_base/workspace_test005_workspace
+  ✅ [workspace_test005] task 001 (145.2s) - success
+   → workspace_test005 this run: generated 1, skipped 0, failed 0
+  ✅ [workspace_test003] task 001 (179.9s) - success
+   → workspace_test003 this run: generated 1, skipped 0, failed 0
+
+============================================================
+📊 Run complete. Elapsed time: 311.7s
+   workspace count: 5
+   tasks in this run: 2
+   ✅ success: 2
+   ⚪ empty_payloads: 0
+   ❌ failed: 0
+   ⏰ timeout: 0
+   💥 error: 0
+   📄 summary: /mnt/d/project/ClawSynth/result/syn_data_test_v3/filegen_result/summary.json
+============================================================
