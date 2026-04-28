@@ -1,18 +1,10 @@
 #!/usr/bin/env python3
 """
-批量运行 OpenClaw 任务脚本
-
-架构更新：
-  - 核心变更：【每跑一次 Task，彻底销毁并重建 Agent】。确保上下文 100% 隔离，杜绝任何僵尸进程对后续 Task 或日志文件的污染。
-  - 每个领域对应 1 个独立 workspace 物理目录。
-  - 领域间并发，领域内串行执行。
-  - 支持断点续跑：使用 checkpoint 文件记录已完成的任务，中断后再次运行自动跳过。
-
-用法：
-  python batch_openclaw.py run      # 执行所有任务
-  python batch_openclaw.py cleanup  # 手动清理残留 agents
-  python batch_openclaw.py reset    # 清除 checkpoint 记录，从头开始跑
-  python batch_openclaw.py status   # 查看当前进度
+Usage:
+  python batch_openclaw.py run      # Execute all tasks
+  python batch_openclaw.py cleanup  # Manually clean up leftover agents
+  python batch_openclaw.py reset    # Clear checkpoint records and restart from scratch
+  python batch_openclaw.py status   # Show current progress
 """
 
 import argparse
@@ -28,7 +20,7 @@ import random
 from pathlib import Path
 from datetime import datetime
 
-# ======================== 运行时配置（由参数和 .env 初始化） ========================
+# ======================== Runtime config (initialized from args and .env) ========================
 OPENCLAW_MODEL: str | None = None
 WORKSPACE_HUB_DIR: Path | None = None
 WORKSPACE_BASE: Path | None = None
@@ -45,21 +37,21 @@ REQUIRED_SKILLS: set[str] = {
 
 }
 
-# ======================== 全局状态 ========================
+# ======================== Global state ========================
 _setup_workspaces = set()
 _setup_workspaces_lock = threading.Lock()
 
-# checkpoint 写入锁
+# Checkpoint write lock
 _checkpoint_lock = threading.Lock()
 
-# CLI 锁：防止高并发增删 Agent 导致 openclaw 系统注册表竞争损坏
+# CLI lock: prevent registry corruption from concurrent agent add/delete operations
 _agent_cli_lock = threading.Lock()
 
-# 领域任务数据，由 main 函数中延迟加载
+# Domain task data, loaded lazily in main()
 DOMAINS = {}
 
 
-# ======================== 参数初始化 ========================
+# ======================== Argument initialization ========================
 
 def load_dotenv(env_file: Path):
     if not env_file.exists():
@@ -88,25 +80,25 @@ def load_dotenv(env_file: Path):
 def positive_int(value: str) -> int:
     ivalue = int(value)
     if ivalue <= 0:
-        raise argparse.ArgumentTypeError("参数必须为正整数")
+        raise argparse.ArgumentTypeError("The argument must be a positive integer")
     return ivalue
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="批量运行 OpenClaw 任务脚本")
-    parser.add_argument("--env-file", type=Path, default=Path(".env"), help=".env 文件路径")
+    parser = argparse.ArgumentParser(description="Batch script for running OpenClaw tasks")
+    parser.add_argument("--env-file", type=Path, default=Path(".env"), help="Path to the .env file")
 
     subparsers = parser.add_subparsers(dest="action", required=True)
 
     def add_common_args(subparser: argparse.ArgumentParser):
-        subparser.add_argument("--workspace-hub", type=Path, required=True, help="原始 workspace 根目录")
-        subparser.add_argument("--workspace-base", type=Path, help="临时 workspace 根目录（run 时必填）")
-        subparser.add_argument("--results-dir", type=Path, help="结果目录（run 时必填）")
-        subparser.add_argument("--openclaw-model", type=str, default=os.getenv("OPENCLAW_MODEL"), help="模型名，默认通过 .env 配置")
-        subparser.add_argument("--openclaw-timeout", type=positive_int, default=1200, help="单任务超时")
-        subparser.add_argument("--max-domain-parallel", type=positive_int, default=5, help="领域间并发数")
-        subparser.add_argument("--skills-pool", type=Path, help="可选 skills 池目录")
-        subparser.add_argument("--skill-min", type=positive_int, default=3, help="随机抽取技能最小值")
-        subparser.add_argument("--skill-max", type=positive_int, default=3, help="随机抽取技能最大值")
+        subparser.add_argument("--workspace-hub", type=Path, required=True, help="Root directory of the source workspaces")
+        subparser.add_argument("--workspace-base", type=Path, help="Root directory for temporary workspaces (required for run)")
+        subparser.add_argument("--results-dir", type=Path, help="Results directory (required for run)")
+        subparser.add_argument("--openclaw-model", type=str, default=os.getenv("OPENCLAW_MODEL"), help="Model name, defaults to the value from .env")
+        subparser.add_argument("--openclaw-timeout", type=positive_int, default=1200, help="Timeout per task")
+        subparser.add_argument("--max-domain-parallel", type=positive_int, default=5, help="Concurrency across domains")
+        subparser.add_argument("--skills-pool", type=Path, help="Optional skills pool directory")
+        subparser.add_argument("--skill-min", type=positive_int, default=3, help="Minimum number of randomly selected skills")
+        subparser.add_argument("--skill-max", type=positive_int, default=3, help="Maximum number of randomly selected skills")
 
     for action in ("run", "cleanup", "reset", "status"):
         add_common_args(subparsers.add_parser(action))
@@ -134,23 +126,23 @@ def init_config(args):
 
 def validate_config(action: str):
     if not WORKSPACE_HUB_DIR:
-        raise ValueError("缺少 --workspace-hub")
+        raise ValueError("Missing --workspace-hub")
     if not WORKSPACE_HUB_DIR.exists():
-        raise FileNotFoundError(f"workspace_hub 不存在: {WORKSPACE_HUB_DIR}")
+        raise FileNotFoundError(f"workspace_hub does not exist: {WORKSPACE_HUB_DIR}")
 
     if action == "run":
         if not WORKSPACE_BASE:
-            raise ValueError("run 模式缺少 --workspace-base")
+            raise ValueError("Missing --workspace-base in run mode")
         if not RESULTS_DIR:
-            raise ValueError("run 模式缺少 --results-dir")
+            raise ValueError("Missing --results-dir in run mode")
         if not OPENCLAW_MODEL:
-            raise ValueError("缺少 OPENCLAW_MODEL（请在 .env 中配置或通过 --openclaw-model 传入）")
+            raise ValueError("Missing OPENCLAW_MODEL (set it in .env or pass it via --openclaw-model)")
 
 
-# ======================== Checkpoint 管理 ========================
+# ======================== Checkpoint management ========================
 
 def load_checkpoint() -> set:
-    """加载已完成的任务（包含 success/timeout/error/failed）"""
+    """Load completed tasks, including success/timeout/error/failed."""
     completed = set()
     if CHECKPOINT_FILE is None or not CHECKPOINT_FILE.exists():
         return completed
@@ -166,7 +158,7 @@ def load_checkpoint() -> set:
                 task_idx = record.get("task_idx", -1)
                 status = record.get("status", "")
                 
-                # 只要执行过就跳过，避免陷入死循环
+                # Skip anything that has already been attempted to avoid infinite retry loops.
                 if status in ("success", "failed", "timeout", "error") and domain and task_idx >= 0:
                     completed.add(f"{domain}::{task_idx}")
             except Exception:
@@ -188,9 +180,9 @@ def save_checkpoint(result: dict):
 def reset_checkpoint():
     if CHECKPOINT_FILE and CHECKPOINT_FILE.exists():
         CHECKPOINT_FILE.unlink()
-        print(f"✅ 已清除 checkpoint 文件: {CHECKPOINT_FILE}")
+        print(f"✅ Cleared checkpoint file: {CHECKPOINT_FILE}")
     else:
-        print(f"ℹ️  checkpoint 文件不存在，无需清除")
+        print("ℹ️  Checkpoint file does not exist, nothing to clear")
 
 
 def show_status():
@@ -202,11 +194,11 @@ def show_status():
         domain = key.split("::")[0]
         domain_completed[domain] = domain_completed.get(domain, 0) + 1
 
-    print(f"\n📊 当前进度:")
+    print("\n📊 Current progress:")
     print(f"{'='*50}")
-    print(f"   总任务数: {total_tasks}")
-    print(f"   已完成数: {len(completed)}")
-    print(f"   剩余任务: {total_tasks - len(completed)}")
+    print(f"   Total tasks: {total_tasks}")
+    print(f"   Completed: {len(completed)}")
+    print(f"   Remaining: {total_tasks - len(completed)}")
     print(f"{'='*50}")
 
     for domain, messages in sorted(DOMAINS.items()):
@@ -214,16 +206,16 @@ def show_status():
         done = domain_completed.get(domain, 0)
         remaining = total - done
         icon = "✅" if remaining == 0 else "🔄" if done > 0 else "⬜"
-        print(f"   {icon} {domain}: {done}/{total} (剩余 {remaining})")
+        print(f"   {icon} {domain}: {done}/{total} (remaining {remaining})")
     print(f"{'='*50}\n")
 
 
-# ======================== 任务定义 ========================
+# ======================== Task definitions ========================
 
 def get_domains_data():
     domains = {}
     if WORKSPACE_HUB_DIR is None or not WORKSPACE_HUB_DIR.exists():
-        print(f"❌ 找不到数据目录: {WORKSPACE_HUB_DIR}")
+        print(f"❌ Data directory not found: {WORKSPACE_HUB_DIR}")
         return domains
 
     for domain_dir in WORKSPACE_HUB_DIR.iterdir():
@@ -254,7 +246,7 @@ def get_domains_data():
     return domains
 
 
-# ======================== 核心逻辑 ========================
+# ======================== Core logic ========================
 
 def get_workspace_path(domain: str) -> str:
     return str(WORKSPACE_BASE / f"{domain}_workspace")
@@ -278,10 +270,10 @@ def prepare_workspace_skills(domain: str, workspace_path: Path):
         try:
             _remove_path(skills_dir / skill_name)
         except Exception as e:
-            print(f"  ⚠️ [{domain}] 删除 skill 失败 {skill_name}: {e}")
+            print(f"  ⚠️ [{domain}] Failed to remove skill {skill_name}: {e}")
 
     if SKILLS_POOL_DIR is None or not SKILLS_POOL_DIR.exists() or not SKILLS_POOL_DIR.is_dir():
-        print(f"  ⚠️ [{domain}] skills 池目录不存在或未提供: {SKILLS_POOL_DIR}")
+        print(f"  ⚠️ [{domain}] Skills pool directory is missing or not provided: {SKILLS_POOL_DIR}")
         return
 
     pool_skill_names = [
@@ -293,7 +285,7 @@ def prepare_workspace_skills(domain: str, workspace_path: Path):
 
     missing_required = sorted(REQUIRED_SKILLS - pool_skill_set)
     if missing_required:
-        print(f"  ⚠️ [{domain}] 必选 skills 缺失: {', '.join(missing_required)}")
+        print(f"  ⚠️ [{domain}] Missing required skills: {', '.join(missing_required)}")
 
     required_skills = REQUIRED_SKILLS & pool_skill_set
     target_total = random.randint(SKILL_MIN, SKILL_MAX)
@@ -310,11 +302,11 @@ def prepare_workspace_skills(domain: str, workspace_path: Path):
         try:
             target.symlink_to(source, target_is_directory=source.is_dir())
         except Exception as e:
-            print(f"  ⚠️ [{domain}] 创建 skill 软链接失败 {skill_name}: {e}")
+            print(f"  ⚠️ [{domain}] Failed to create skill symlink {skill_name}: {e}")
 
 
 def ensure_workspace(domain: str):
-    """确保物理工作区已准备好（拷贝基准文件），只需跑一次即可"""
+    """Ensure the physical workspace is prepared by copying base files once."""
     with _setup_workspaces_lock:
         if domain in _setup_workspaces:
             return
@@ -336,7 +328,7 @@ def ensure_workspace(domain: str):
                     if not target.exists():
                         shutil.copy2(item, target, follow_symlinks=False)
             except Exception as e:
-                print(f"  ⚠️ [{domain}] 拷贝工作区文件失败 {item.name}: {e}")
+                print(f"  ⚠️ [{domain}] Failed to copy workspace file {item.name}: {e}")
 
     prepare_workspace_skills(domain, Path(ws))
 
@@ -345,7 +337,7 @@ def ensure_workspace(domain: str):
 
 
 def create_agent(domain: str):
-    """创建一个崭新的 Agent"""
+    """Create a brand-new agent."""
     ws = get_workspace_path(domain)
     cmd = [
         "openclaw", "agents", "add", domain,
@@ -356,31 +348,31 @@ def create_agent(domain: str):
     with _agent_cli_lock:
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
-            print(f"  ❌ [{domain}] Agent 创建失败: {result.stderr.strip()}")
+            print(f"  ❌ [{domain}] Failed to create agent: {result.stderr.strip()}")
 
 
 def cleanup_single_agent(domain: str, silent: bool = False):
-    """彻底销毁 Agent，避免残留僵尸进程"""
-    # 1. 尝试调用命令删除
+    """Destroy an agent completely to avoid leftover zombie processes."""
+    # 1. Try deleting it via the CLI command.
     cmd = ["openclaw", "agents", "delete", domain, "--force"]
     with _agent_cli_lock:
         result = subprocess.run(cmd, capture_output=True, text=True)
         if not silent and result.returncode != 0 and "not found" not in result.stderr.lower():
-            print(f"  ⚠️ [{domain}] Agent 删除异常: {result.stderr.strip()}")
+            print(f"  ⚠️ [{domain}] Agent deletion warning: {result.stderr.strip()}")
 
-    # 2. 物理清除残留配置记录和 Session 目录
+    # 2. Physically remove leftover config records and session directories.
     agent_record_path = Path.home() / ".openclaw" / "agents" / domain
     if agent_record_path.exists():
         try:
             shutil.rmtree(agent_record_path)
             if not silent:
-                print(f"  🗑️ [{domain}] 已清理隔离文件记录")
+                print(f"  🗑️ [{domain}] Cleaned local isolated records")
         except Exception:
             pass
 
 
 def run_single_task(domain: str, task_idx: int, message: str) -> dict:
-    """执行单个任务"""
+    """Run a single task."""
     session_id = f"{domain}_task_{task_idx:03d}"
     start_time = time.time()
 
@@ -461,10 +453,10 @@ def run_domain_tasks(domain: str, messages: list[str], completed: set) -> list[d
     ]
 
     if not pending_indices:
-        print(f"\n⏭️  领域 [{domain}] 所有任务已完成，跳过")
+        print(f"\n⏭️  Domain [{domain}] has already completed all tasks, skipping")
         return results
 
-    print(f"\n🚀 领域 [{domain}] 剩余 {len(pending_indices)} 个任务待执行...")
+    print(f"\n🚀 Domain [{domain}] has {len(pending_indices)} remaining tasks to run...")
 
     ensure_workspace(domain)
 
@@ -475,7 +467,7 @@ def run_domain_tasks(domain: str, messages: list[str], completed: set) -> list[d
     for idx in pending_indices:
         msg = messages[idx]
 
-        # 【核心生命周期】每次 Task 开始前清理上次残留，并重建纯净 Agent 环境
+        # Core lifecycle: before each task, clear leftovers from the previous run and rebuild a clean agent environment.
         cleanup_single_agent(domain, silent=True)
         create_agent(domain)
 
@@ -483,7 +475,7 @@ def run_domain_tasks(domain: str, messages: list[str], completed: set) -> list[d
         results.append(result)
         save_checkpoint(result)
 
-        # 拷贝对话记录。因为每次建了新 Agent，此时 session_dir 里理论上只有本次任务生成的文件
+        # Copy conversation records. Because a fresh agent is created each time, the session directory should only contain files from this task.
         session_id = f"{domain}_task_{idx:03d}"
         if session_dir.exists() and session_dir.is_dir():
             jsonl_files = sorted(f for f in session_dir.glob("*.jsonl") if f.is_file())
@@ -494,7 +486,6 @@ def run_domain_tasks(domain: str, messages: list[str], completed: set) -> list[d
                 except Exception:
                     pass
 
-        # 【核心生命周期】每次 Task 结束后，立即彻底销毁 Agent，切断任何后台孤儿进程
         cleanup_single_agent(domain, silent=True)
 
     return results
@@ -507,15 +498,15 @@ def run_all():
     completed_count = len(completed)
     remaining_count = total_tasks - completed_count
 
-    print(f"📋 共 {len(DOMAINS)} 个领域, {total_tasks} 个任务")
+    print(f"📋 {len(DOMAINS)} domains, {total_tasks} tasks in total")
     if completed_count > 0:
-        print(f"📌 从 checkpoint 恢复: 已完成 {completed_count}, 剩余 {remaining_count}")
-    print(f"⚙️  领域间并发: {MAX_DOMAIN_PARALLEL}")
-    print(f"📂 结果目录: {RESULTS_DIR}")
+        print(f"📌 Resumed from checkpoint: {completed_count} completed, {remaining_count} remaining")
+    print(f"⚙️  Cross-domain concurrency: {MAX_DOMAIN_PARALLEL}")
+    print(f"📂 Results directory: {RESULTS_DIR}")
     print(f"📝 Checkpoint: {CHECKPOINT_FILE}\n")
 
     if remaining_count == 0:
-        print("🎉 所有任务已完成！如需重新执行，请先执行 reset 命令。")
+        print("🎉 All tasks are already complete. Run the reset command if you want to execute them again.")
         return
 
     all_results = []
@@ -532,7 +523,7 @@ def run_all():
                 results = future.result()
                 all_results.extend(results)
             except Exception as e:
-                print(f"💥 领域 [{domain}] 执行异常: {e}")
+                print(f"💥 Domain [{domain}] execution error: {e}")
 
     elapsed = time.time() - start_time
     final_completed = load_checkpoint()
@@ -555,46 +546,46 @@ def run_all():
         json.dump(summary, f, ensure_ascii=False, indent=2)
 
     print(f"\n{'='*50}")
-    print(f"📊 本次执行完毕！耗时 {elapsed:.1f}s")
-    print(f"   📌 总任务: {total_tasks}, 累计完成: {len(final_completed)}")
-    print(f"   ✅ 成功: {summary['this_run_success']}")
-    print(f"   ❌ 失败/超时/异常: {summary['this_run_failed'] + summary['this_run_timeout'] + summary['this_run_error']}")
-    print(f"   📄 汇总日志: {summary_file}")
+    print(f"📊 Run complete. Elapsed time: {elapsed:.1f}s")
+    print(f"   📌 Total tasks: {total_tasks}, completed overall: {len(final_completed)}")
+    print(f"   ✅ Success: {summary['this_run_success']}")
+    print(f"   ❌ Failed/timeout/error: {summary['this_run_failed'] + summary['this_run_timeout'] + summary['this_run_error']}")
+    print(f"   📄 Summary log: {summary_file}")
     print(f"{'='*50}")
 
 
 def cleanup_agents():
-    print("🧹 正在扫描清理属于本批次数据的遗留 Agent...\n")
+    print("🧹 Scanning for leftover agents associated with this batch...\n")
     
-    # 1. 从 CLI 获取当前已注册的 agent
+    # 1. Get currently registered agents from the CLI.
     result = subprocess.run(["openclaw", "agents", "list"], capture_output=True, text=True)
     existing_agents = set()
     for line in result.stdout.split('\n'):
         line = line.strip()
         if line.startswith("- "):
-            # 提取名称，形如 "- main (default)" 取 "main"
+            # Extract the name, e.g. "- main (default)" -> "main".
             agent_name = line[2:].split()[0]
             existing_agents.add(agent_name)
             
-    # 2. 从本地缓存记录目录获取残留的孤弃 agent
+    # 2. Get orphaned leftover agents from the local cache directory.
     local_agents_dir = Path.home() / ".openclaw" / "agents"
     if local_agents_dir.exists() and local_agents_dir.is_dir():
         for d in local_agents_dir.iterdir():
             if d.is_dir():
                 existing_agents.add(d.name)
 
-    # 3. 找出既属于当前脚本的 DOMAINS，实际上又存在残留的 Agent
+    # 3. Find agents that both belong to this script's domains and still physically exist.
     targets_to_delete = existing_agents.intersection(set(DOMAINS.keys()))
     
     if not targets_to_delete:
-        print("🎉 未发现属于当前全量批次的残留 Agent，无需遍历清理！")
+        print("🎉 No leftover agents for the current full batch were found. No cleanup needed.")
         return
 
-    print(f"👀 发现 {len(targets_to_delete)} 个关联僵尸残留，开始极速精准打击...")
+    print(f"👀 Found {len(targets_to_delete)} related zombie leftovers. Starting targeted cleanup...")
     for domain in targets_to_delete:
         cleanup_single_agent(domain)
         
-    print("\n🎉 清理完毕！相关的系统后台及本地 records 已彻底抹除。")
+    print("\n🎉 Cleanup complete. Related system background entries and local records have been fully removed.")
 
 
 def main():
@@ -606,12 +597,12 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
 
-    # 第二次带上 dotenv 的变量去加载参数
+    # Load arguments again after dotenv variables are available.
     load_dotenv(args.env_file)
     init_config(args)
     validate_config(args.action)
 
-    # 延迟加载 DOMAINS 数据
+    # Lazily load DOMAINS data.
     global DOMAINS
     DOMAINS = get_domains_data()
 
@@ -625,7 +616,7 @@ def main():
     elif action == "status":
         show_status()
     else:
-        print(f"❌ 未知命令: {action}")
+        print(f"❌ Unknown command: {action}")
         sys.exit(1)
 
 

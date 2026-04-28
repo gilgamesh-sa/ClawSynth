@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 """
-批量调用 OpenClaw 为 benchmark query 预生成所需的输入文件（batch 版本）。
-
-改动原则：
-  - 保持旧脚本主体逻辑不变
-  - 只调整参数读取方式
-  - 大模型相关配置统一从 .env 读取
-  - 路径和并发/超时参数统一从 argparse 读取
-
-用法：
+Usage:
   1. python src/batch_filegen.py run --workspace-hub ... --workspace-base ... --results-dir ... --skills-source ...
   2. python src/batch_filegen.py cleanup --workspace-hub ...
   3. python src/batch_filegen.py reset --workspace-hub ...
@@ -35,13 +27,13 @@ from pathlib import Path
 from tqdm import tqdm
 
 # ============================================================
-# 固定文件名
+# Fixed file names
 # ============================================================
 INPUT_FILENAME = "queries_persona.jsonl"
 LOG_FILENAME = "filegen_log.jsonl"
 
 # ============================================================
-# 运行时配置（由参数和 .env 初始化）
+# Runtime config (initialized from args and .env)
 # ============================================================
 WORKSPACE_HUB: Path | None = None
 WORKSPACE_BASE: Path | None = None
@@ -59,7 +51,7 @@ FILTER_TIMEOUT = 50
 FILTER_WORKERS = 1
 
 # ============================================================
-# 全局状态（线程安全）
+# Global state (thread-safe)
 # ============================================================
 _log_lock = threading.Lock()
 _setup_workspaces: set[str] = set()
@@ -67,69 +59,69 @@ _setup_workspaces_lock = threading.Lock()
 _agent_cli_lock = threading.Lock()
 
 # ============================================================
-# 给 openclaw 的 prompt 模板
+# Prompt template for OpenClaw
 # ============================================================
 PROMPT_TEMPLATE = """\
-以下是一条用户 query，它在执行时可能需要一些本地文件作为输入（比如图片、音频、文档等）。
+Below is a user query that may require some local files as input when executed, such as images, audio, or documents.
 
-请你分析这条 query，找出其中"需要事先存在"的输入文件（即用户说"我有"、"帮我分析/识别/翻译这个文件"等的那些文件），然后帮我把这些文件生成出来。你可以调用 claw-input-file-generator 这个skill进行文件的生成。
+Please analyze this query, identify the input files that need to already exist beforehand, such as files the user refers to with phrases like "I have..." or "help me analyze/recognize/translate this file", and then generate those files. You may use the `claw-input-file-generator` skill to create them.
 
-如果不存在"需要事先存在"的输入文件，那就跳过这个query!
-如果存在"需要事先存在"的输入文件，可以参考 claw-input-file-generator 这个skill来完成输入文件的合成。
+If there are no input files that must already exist, then skip this query.
+If there are input files that must already exist, you can rely on the `claw-input-file-generator` skill to synthesize them.
 
 
-注意：
-- 只生成"输入文件"，不要生成 query 要求的"输出文件"（如"保存到 xxx"的那些）
-- 如果 query 不需要任何预先存在的文件（比如纯文本搜索、纯生成类任务），直接回复"无需生成输入文件"即可
-- 所有文件保存到 {workspace} 目录下，保持 query 中的相对路径结构
-- 图片文件请用文生图或 canvas 功能生成内容合理的图片
-- 音频文件请用语音合成功能生成
-- 文本/文档文件直接写入合理的内容
+Notes:
+- Generate only input files. Do not generate output files requested by the query, such as files mentioned in "save to xxx".
+- If the query does not require any pre-existing files, such as pure search or pure generation tasks, simply reply with "No input files need to be generated".
+- Save all files under the `{workspace}` directory while preserving the relative path structure referenced in the query.
+- For image files, generate reasonable image content using text-to-image or canvas capabilities.
+- For audio files, generate them using speech synthesis.
+- For text or document files, write reasonable content directly.
 
-用户 query 如下：
+The user query is:
 ---
 {query}
 ---"""
 
 
 # ============================================================
-# LLM 预筛选：判断 query 是否需要预生成输入文件
+# LLM prefilter: determine whether the query requires pre-generated input files
 # ============================================================
 FILTER_SYSTEM_PROMPT = """\
-你是一个文件需求分析器。给定一条用户 query，你需要判断它在执行前是否需要"事先存在"的本地输入文件。
+You are a file requirement analyzer. Given a user query, determine whether it requires local input files that must already exist before execution.
 
-注意：有些用户会明确写出文件路径（如 `./receipt.png`），有些用户只会模糊描述文件（如"我有一份销售数据"、"我电脑上有份英文年报"）。两种情况都算需要输入文件！
+Note: some users explicitly provide file paths, such as `./receipt.png`, while others only describe the files vaguely, such as "I have some sales data" or "there is an English annual report on my computer". Both cases count as requiring input files.
 
-需要输入文件的例子（明确路径）：
-- "帮我识别 ./receipt.png 里的文字" → 需要（./receipt.png 必须事先存在）
-- "翻译 ./report_en.pdf 的内容" → 需要（./report_en.pdf 必须事先存在）
-- "帮我分析 ./sales_data.csv 的数据" → 需要（./sales_data.csv 必须事先存在）
+Examples that require input files (explicit path):
+- "Help me recognize the text in ./receipt.png" -> YES (`./receipt.png` must already exist)
+- "Translate the content of ./report_en.pdf" -> YES (`./report_en.pdf` must already exist)
+- "Help me analyze the data in ./sales_data.csv" -> YES (`./sales_data.csv` must already exist)
 
-需要输入文件的例子（模糊描述）：
-- "我有一份销售数据，帮我分析一下趋势" → 需要（用户说"我有"，说明文件已存在）
-- "我电脑上有份英文年报，帮我翻译" → 需要（用户提到已有的文件）
-- "我之前存了一张发票照片，帮我识别上面的内容" → 需要（用户说"我之前存了"）
-- "我昨天录的那段会议音频，帮我转成文字" → 需要（用户提到已有的音频）
+Examples that require input files (vague description):
+- "I have some sales data, help me analyze the trend" -> YES (the user says "I have", which implies the file already exists)
+- "There is an English annual report on my computer, help me translate it" -> YES (the user refers to an existing file)
+- "I previously saved a photo of an invoice, help me recognize its content" -> YES (the user says "I previously saved")
+- "That meeting audio I recorded yesterday, help me convert it to text" -> YES (the user refers to an existing audio file)
 
-不需要输入文件的例子：
-- "帮我搜索新能源汽车行业资讯" → 不需要（纯搜索/生成类）
-- "帮我生成一张宠物医院的宣传图，保存到 ./poster.png" → 不需要（./poster.png 是输出文件，不是输入）
-- "帮我写一份行业分析报告" → 不需要（纯生成类）
-- "帮我录一段关于咖啡行业的播客" → 不需要（纯生成类）
-- "帮我设计一个前端网页" → 不需要（纯生成类）
+Examples that do not require input files:
+- "Help me search for news about the new energy vehicle industry" -> NO (pure search/generation task)
+- "Help me create a promotional image for a pet hospital and save it to ./poster.png" -> NO (`./poster.png` is an output file, not an input file)
+- "Help me write an industry analysis report" -> NO (pure generation task)
+- "Help me record a podcast about the coffee industry" -> NO (pure generation task)
+- "Help me design a frontend webpage" -> NO (pure generation task)
 
-关键区分：
-- "输入文件"是 query 执行前用户已经拥有的、需要 AI 读取/处理的文件（不管是否给出了路径）
-- "输出文件"是 query 要求 AI 生成/保存的文件，不算输入文件
-- 用户说"我有…"、"我之前存了…"、"我电脑上有…"、"我昨天录的…" 等，都表示已有文件，需要预生成
+Key distinction:
+- An input file is a file the user already has before the query is executed and that the AI must read or process, whether or not a path is provided.
+- An output file is a file the AI is asked to generate or save, so it does not count as an input file.
+- Phrases like "I have...", "I previously saved...", "there is ... on my computer", or "I recorded yesterday..." all indicate an existing file and therefore require pre-generation.
 
-只回复 YES 或 NO，不要有任何其他内容。"""
+Reply only with YES or NO, and nothing else."""
 
-FILTER_USER_PROMPT = "以下是你要进行判定的query: "
+FILTER_USER_PROMPT = "Here is the query you need to classify: "
 
 
 # ============================================================
-# 参数初始化
+# Argument initialization
 # ============================================================
 def load_dotenv(env_file: Path):
     if not env_file.exists():
@@ -159,21 +151,21 @@ def load_dotenv(env_file: Path):
 def positive_int(value: str) -> int:
     ivalue = int(value)
     if ivalue <= 0:
-        raise argparse.ArgumentTypeError("参数必须为正整数")
+        raise argparse.ArgumentTypeError("The argument must be a positive integer")
     return ivalue
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="批量生成 query 所需输入文件")
-    parser.add_argument("--env-file", type=Path, default=Path(".env"), help=".env 文件路径")
+    parser = argparse.ArgumentParser(description="Batch-generate the input files required by queries")
+    parser.add_argument("--env-file", type=Path, default=Path(".env"), help="Path to the .env file")
 
     subparsers = parser.add_subparsers(dest="action", required=True)
 
     def add_common_args(subparser: argparse.ArgumentParser):
-        subparser.add_argument("--workspace-hub", type=Path, required=True, help="原始 workspace 根目录")
-        subparser.add_argument("--workspace-base", type=Path, help="临时 workspace 根目录（run 时必填）")
-        subparser.add_argument("--results-dir", type=Path, help="结果目录（run 时必填）")
-        subparser.add_argument("--skills-source", type=Path, help="skills 来源目录（run 时必填）")
+        subparser.add_argument("--workspace-hub", type=Path, required=True, help="Root directory of the source workspaces")
+        subparser.add_argument("--workspace-base", type=Path, help="Root directory for temporary workspaces (required for run)")
+        subparser.add_argument("--results-dir", type=Path, help="Results directory (required for run)")
+        subparser.add_argument("--skills-source", type=Path, help="Skills source directory (required for run)")
         subparser.add_argument("--openclaw-model", type=str, default=os.getenv("GEN_OPENCLAW_MODEL"))
         subparser.add_argument("--openclaw-timeout", type=positive_int, default=OPENCLAW_TIMEOUT)
         subparser.add_argument("--max-domain-parallel", type=positive_int, default=MAX_DOMAIN_PARALLEL)
@@ -209,29 +201,29 @@ def init_config(args):
 
 def validate_config(action: str):
     if WORKSPACE_HUB is None:
-        raise ValueError("缺少 --workspace-hub")
+        raise ValueError("Missing --workspace-hub")
     if not WORKSPACE_HUB.exists():
-        raise FileNotFoundError(f"workspace_hub 不存在: {WORKSPACE_HUB}")
+        raise FileNotFoundError(f"workspace_hub does not exist: {WORKSPACE_HUB}")
 
     if action == "run":
         if WORKSPACE_BASE is None:
-            raise ValueError("run 模式缺少 --workspace-base")
+            raise ValueError("Missing --workspace-base in run mode")
         if RESULTS_DIR is None:
-            raise ValueError("run 模式缺少 --results-dir")
+            raise ValueError("Missing --results-dir in run mode")
         if SKILLS_SOURCE is None:
-            raise ValueError("run 模式缺少 --skills-source")
+            raise ValueError("Missing --skills-source in run mode")
         if not GEN_OPENCLAW_MODEL:
-            raise ValueError("缺少 GEN_OPENCLAW_MODEL（请在 .env 中配置或通过 --openclaw-model 传入）")
+            raise ValueError("Missing GEN_OPENCLAW_MODEL (set it in .env or pass it via --openclaw-model)")
         if not LITELLM_API_BASE:
-            raise ValueError("缺少 FILTER_API_BASE（请在 .env 中配置）")
+            raise ValueError("Missing FILTER_API_BASE (please set it in .env)")
         if not LITELLM_API_KEY:
-            raise ValueError("缺少 FILTER_API_KEY（请在 .env 中配置）")
+            raise ValueError("Missing FILTER_API_KEY (please set it in .env)")
         if not FILTER_MODEL:
-            raise ValueError("缺少 FILTER_MODEL（请在 .env 中配置）")
+            raise ValueError("Missing FILTER_MODEL (please set it in .env)")
 
 
 # ============================================================
-# 工具函数
+# Utility helpers
 # ============================================================
 def list_workspace_dirs() -> list[Path]:
     assert WORKSPACE_HUB is not None
@@ -267,7 +259,7 @@ def sync_workspace(ws_dir: Path, tmp_ws: Path):
             else:
                 shutil.copy2(item, target)
         except Exception as e:
-            print(f"  ⚠️ [{ws_dir.name}] 拷贝文件失败 {item.name}: {e}")
+            print(f"  ⚠️ [{ws_dir.name}] Failed to copy file {item.name}: {e}")
 
     if SKILLS_SOURCE.exists():
         target_skills = tmp_ws / "skills"
@@ -290,7 +282,7 @@ def sync_workspace(ws_dir: Path, tmp_ws: Path):
                         shutil.rmtree(target_skill)
                     shutil.copytree(skill_dir, target_skill)
                 except Exception as e:
-                    print(f"  ⚠️ [{ws_dir.name}] 同步 skill 失败 {skill_dir.name}: {e}")
+                    print(f"  ⚠️ [{ws_dir.name}] Failed to sync skill {skill_dir.name}: {e}")
 
 
 def ensure_workspace(ws_dir: Path):
@@ -317,16 +309,16 @@ def create_agent(ws_name: str):
         "--workspace", str(tmp_ws),
         "--non-interactive",
     ]
-    print(f"  📦 创建 agent: {agent_name}")
+    print(f"  📦 Creating agent: {agent_name}")
     print(f"     workspace: {tmp_ws}")
     with _agent_cli_lock:
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
-            raise RuntimeError(f"创建 agent 失败 {agent_name}: {result.stderr.strip()}")
+            raise RuntimeError(f"Failed to create agent {agent_name}: {result.stderr.strip()}")
 
 
 # ============================================================
-# 断点续跑 & 日志
+# Resume support and logs
 # ============================================================
 def load_finished_ids(log_file: Path) -> set[str]:
     if not log_file.exists():
@@ -368,7 +360,7 @@ def cleanup_single_agent(agent_name: str, silent: bool = False):
     with _agent_cli_lock:
         result = subprocess.run(cmd, capture_output=True, text=True)
         if not silent and result.returncode != 0 and "not found" not in result.stderr.lower():
-            print(f"     ⚠️ 删除失败 {agent_name}: {result.stderr.strip()}")
+            print(f"     ⚠️ Failed to delete {agent_name}: {result.stderr.strip()}")
 
     agent_record = Path.home() / ".openclaw" / "agents" / agent_name
     if agent_record.exists():
@@ -378,23 +370,23 @@ def cleanup_single_agent(agent_name: str, silent: bool = False):
             else:
                 agent_record.unlink()
             if not silent:
-                print(f"     🗑️  已清理本地记录: {agent_record}")
+                print(f"     🗑️  Cleaned local record: {agent_record}")
         except Exception as e:
             if not silent:
-                print(f"     ⚠️ 清理本地记录失败: {e}")
+                print(f"     ⚠️ Failed to clean local record: {e}")
 
 
 def cleanup_agents():
     workspace_dirs = list_workspace_dirs()
-    print(f"🧹 正在删除 {len(workspace_dirs)} 个 agents...\n")
+    print(f"🧹 Deleting {len(workspace_dirs)} agents...\n")
     for ws_dir in workspace_dirs:
         agent_name = get_agent_name(ws_dir.name)
         cleanup_single_agent(agent_name)
-    print("\n🎉 清理完毕！")
+    print("\n🎉 Cleanup complete!")
 
 
 # ============================================================
-# 阶段一：并发预筛选
+# Stage 1: concurrent prefiltering
 # ============================================================
 def needs_input_files(query: str) -> bool | None:
     assert LITELLM_API_BASE is not None
@@ -424,10 +416,10 @@ def needs_input_files(query: str) -> bool | None:
             elif "NO" in answer:
                 return False
             else:
-                print(f"  ⚠️ 预筛选返回异常内容: {answer[:120]}")
+                print(f"  ⚠️ Prefilter returned unexpected content: {answer[:120]}")
                 return None
     except Exception as e:
-        print(f"  ⚠️ 预筛选调用失败: model={FILTER_MODEL}, error={e}")
+        print(f"  ⚠️ Prefilter request failed: model={FILTER_MODEL}, error={e}")
         return None
 
 
@@ -442,7 +434,7 @@ def run_prefilter(todo: list[dict], ws_name: str, log_file: Path) -> tuple[list[
     need_generate = []
     skip_count = 0
 
-    with tqdm(total=len(todo), desc=f"  {ws_name} 预筛选", unit="q",
+    with tqdm(total=len(todo), desc=f"  {ws_name} prefilter", unit="q",
               bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] {postfix}") as pbar:
         with ThreadPoolExecutor(max_workers=FILTER_WORKERS) as executor:
             future_to_rec = {
@@ -455,7 +447,7 @@ def run_prefilter(todo: list[dict], ws_name: str, log_file: Path) -> tuple[list[
                     rid, need = future.result()
                     if need is False:
                         log_result(log_file, rid, True,
-                                   "[SKIP] 预筛选判定无需生成输入文件",
+                                   "[SKIP] Prefilter determined that no input files need to be generated",
                                    status="skip")
                         skip_count += 1
                     else:
@@ -464,14 +456,14 @@ def run_prefilter(todo: list[dict], ws_name: str, log_file: Path) -> tuple[list[
                                      skip=skip_count, refresh=True)
                 except Exception as e:
                     need_generate.append(rec)
-                    pbar.write(f"  ⚠️ 预筛选异常 {rec['id']}: {e}")
+                    pbar.write(f"  ⚠️ Prefilter error for {rec['id']}: {e}")
                 pbar.update(1)
 
     return need_generate, skip_count
 
 
 # ============================================================
-# 阶段二：串行调用 OpenClaw 生成文件
+# Stage 2: serial OpenClaw calls to generate files
 # ============================================================
 def run_single_task(agent_name: str, session_id: str, message: str,
                     ws_name: str, task_idx: int) -> dict:
@@ -544,7 +536,7 @@ def run_single_task(agent_name: str, session_id: str, message: str,
 
 
 # ============================================================
-# 处理单个 workspace（领域）
+# Process a single workspace (domain)
 # ============================================================
 def process_workspace(ws_dir: Path) -> list[dict]:
     assert RESULTS_DIR is not None
@@ -556,7 +548,7 @@ def process_workspace(ws_dir: Path) -> list[dict]:
     log_file = ws_dir / LOG_FILENAME
 
     if not input_file.exists():
-        print(f"\n⏭️  {ws_name}: 无 {INPUT_FILENAME}，跳过")
+        print(f"\n⏭️  {ws_name}: no {INPUT_FILENAME}, skipping")
         return []
 
     records = []
@@ -568,37 +560,37 @@ def process_workspace(ws_dir: Path) -> list[dict]:
             try:
                 rec = json.loads(line)
             except json.JSONDecodeError as e:
-                print(f"  ⚠️ [{ws_name}] 输入文件第 {line_no} 行 JSON 解析失败: {e}")
+                print(f"  ⚠️ [{ws_name}] JSON parse failed for line {line_no} in the input file: {e}")
                 continue
 
             rid = rec.get("id")
             result = rec.get("result", "")
             if not rid:
-                print(f"  ⚠️ [{ws_name}] 输入文件第 {line_no} 行缺少 id，已跳过")
+                print(f"  ⚠️ [{ws_name}] Missing id on line {line_no} in the input file, skipped")
                 continue
             if result and not result.startswith("[ERROR]"):
                 records.append(rec)
 
     if not records:
-        print(f"\n⏭️  {ws_name}: 无有效记录，跳过")
+        print(f"\n⏭️  {ws_name}: no valid records, skipping")
         return []
 
     finished_ids = load_finished_ids(log_file)
     todo = [r for r in records if r["id"] not in finished_ids]
 
     if not todo:
-        print(f"\n✅ {ws_name}: 全部 {len(records)} 条已完成，跳过")
+        print(f"\n✅ {ws_name}: all {len(records)} records are already done, skipping")
         return []
 
-    print(f"\n📦 {ws_name}: {len(records)} 条, 已完成 {len(finished_ids)}, 待处理 {len(todo)}")
+    print(f"\n📦 {ws_name}: {len(records)} records, {len(finished_ids)} completed, {len(todo)} pending")
 
     need_generate, skip_count = run_prefilter(todo, ws_name, log_file)
-    print(f"   📊 预筛选完成: {len(need_generate)} 条需要生成, {skip_count} 条跳过")
+    print(f"   📊 Prefilter complete: {len(need_generate)} need generation, {skip_count} skipped")
 
     ensure_workspace(ws_dir)
 
     if not need_generate:
-        print(f"   ✅ {ws_name}: 全部跳过，无需调用 OpenClaw")
+        print(f"   ✅ {ws_name}: everything was skipped, no need to call OpenClaw")
         return []
 
     domain_results_dir = RESULTS_DIR / ws_name
@@ -650,16 +642,16 @@ def process_workspace(ws_dir: Path) -> list[dict]:
                         target_path = domain_results_dir / f"{session_id}_{file_idx}.jsonl"
                         shutil.copy2(str(fp), str(target_path))
                     except Exception as e:
-                        print(f"  ⚠️ [{ws_name}] 拷贝对话记录失败 {fp.name}: {e}")
+                        print(f"  ⚠️ [{ws_name}] Failed to copy conversation record {fp.name}: {e}")
         finally:
             cleanup_single_agent(agent_name, silent=True)
 
-    print(f"   → {ws_name} 本轮: 生成 {done_count}, 跳过 {skip_count}, 失败 {fail_count}")
+    print(f"   → {ws_name} this run: generated {done_count}, skipped {skip_count}, failed {fail_count}")
     return results
 
 
 # ============================================================
-# 主流程：并发执行
+# Main flow: execute concurrently
 # ============================================================
 def reset_logs():
     workspace_dirs = list_workspace_dirs()
@@ -669,11 +661,11 @@ def reset_logs():
         if log_file.exists():
             log_file.unlink()
             count += 1
-            print(f"  🗑️  已清除: {log_file}")
+            print(f"  🗑️  Cleared: {log_file}")
     if count:
-        print(f"\n✅ 已清除 {count} 个日志文件，下次运行将从头开始")
+        print(f"\n✅ Cleared {count} log files. The next run will start from scratch")
     else:
-        print("ℹ️  未找到日志文件，无需清除")
+        print("ℹ️  No log files found, nothing to clear")
 
 
 def show_status():
@@ -681,7 +673,7 @@ def show_status():
     total_records = 0
     total_done = 0
 
-    print(f"\n📊 当前进度:")
+    print("\n📊 Current progress:")
     print("=" * 60)
     for ws_dir in workspace_dirs:
         ws_name = ws_dir.name
@@ -710,10 +702,10 @@ def show_status():
         total_done += done
 
         icon = "✅" if remaining == 0 else ("🔄" if done > 0 else "⬜")
-        print(f"   {icon} {ws_name}: {done}/{total} (剩余 {remaining})")
+        print(f"   {icon} {ws_name}: {done}/{total} (remaining {remaining})")
 
     print("=" * 60)
-    print(f"   总计: {total_done}/{total_records} (剩余 {total_records - total_done})")
+    print(f"   Total: {total_done}/{total_records} (remaining {total_records - total_done})")
     print("=" * 60 + "\n")
 
 
@@ -723,25 +715,25 @@ def run_all():
     workspace_dirs = list_workspace_dirs()
 
     if not workspace_dirs:
-        print(f"❌ 未找到任何包含 {INPUT_FILENAME} 的 workspace 目录")
+        print(f"❌ No workspace directories containing {INPUT_FILENAME} were found")
         return
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
     print("=" * 60)
-    print("Benchmark 输入文件生成器（batch 版本 · workspace 间并发）")
+    print("Benchmark input file generator (batch version, concurrent across workspaces)")
     print(f"  model: {GEN_OPENCLAW_MODEL}")
-    print(f"  预筛选模型: {FILTER_MODEL}")
-    print(f"  预筛选并发: {FILTER_WORKERS}")
-    print(f"  workspace 间并发: {MAX_DOMAIN_PARALLEL}")
-    print(f"  workspace 内: 串行")
-    print(f"  输入文件: {INPUT_FILENAME}")
+    print(f"  prefilter model: {FILTER_MODEL}")
+    print(f"  prefilter workers: {FILTER_WORKERS}")
+    print(f"  cross-workspace concurrency: {MAX_DOMAIN_PARALLEL}")
+    print("  within each workspace: serial")
+    print(f"  input file: {INPUT_FILENAME}")
     print(f"  workspace_hub: {WORKSPACE_HUB}")
-    print(f"  临时 workspace: {WORKSPACE_BASE}")
-    print(f"  结果目录: {RESULTS_DIR}")
-    print(f"  skills 来源: {SKILLS_SOURCE}")
+    print(f"  temporary workspace: {WORKSPACE_BASE}")
+    print(f"  results directory: {RESULTS_DIR}")
+    print(f"  skills source: {SKILLS_SOURCE}")
     print("=" * 60)
-    print(f"\n📂 发现 {len(workspace_dirs)} 个 workspace 目录")
+    print(f"\n📂 Found {len(workspace_dirs)} workspace directories")
 
     all_results = []
     start_time = time.time()
@@ -757,7 +749,7 @@ def run_all():
                 results = future.result()
                 all_results.extend(results)
             except Exception as e:
-                print(f"💥 workspace [{ws_name}] 执行异常: {e}")
+                print(f"💥 Workspace [{ws_name}] execution error: {e}")
 
     elapsed = time.time() - start_time
 
@@ -778,22 +770,22 @@ def run_all():
         json.dump(summary, f, ensure_ascii=False, indent=2)
 
     print(f"\n{'=' * 60}")
-    print(f"📊 执行完毕！耗时 {elapsed:.1f}s")
-    print(f"   workspace 数: {len(workspace_dirs)}")
-    print(f"   本次任务: {len(all_results)}")
-    print(f"   ✅ 成功: {summary['this_run_success']}")
+    print(f"📊 Run complete. Elapsed time: {elapsed:.1f}s")
+    print(f"   workspace count: {len(workspace_dirs)}")
+    print(f"   tasks in this run: {len(all_results)}")
+    print(f"   ✅ success: {summary['this_run_success']}")
     print(f"   ⚪ empty_payloads: {summary['this_run_empty_payloads']}")
-    print(f"   ❌ 失败: {summary['this_run_failed']}")
-    print(f"   ⏰ 超时: {summary['this_run_timeout']}")
-    print(f"   💥 异常: {summary['this_run_error']}")
-    print(f"   📄 汇总: {summary_file}")
+    print(f"   ❌ failed: {summary['this_run_failed']}")
+    print(f"   ⏰ timeout: {summary['this_run_timeout']}")
+    print(f"   💥 error: {summary['this_run_error']}")
+    print(f"   📄 summary: {summary_file}")
     if summary['this_run_empty_payloads'] or summary['this_run_failed'] or summary['this_run_timeout'] or summary['this_run_error']:
-        print("   💡 重跑脚本会自动续跑 failed/timeout/error/empty_payloads 记录")
+        print("   💡 Rerunning the script will automatically resume failed/timeout/error/empty_payloads records")
     print(f"{'=' * 60}")
 
 
 # ============================================================
-# 入口
+# Entry point
 # ============================================================
 def main():
     pre_parser = argparse.ArgumentParser(add_help=False)
@@ -818,7 +810,7 @@ def main():
     elif action == "status":
         show_status()
     else:
-        print(f"❌ 未知命令: {action}")
+        print(f"❌ Unknown command: {action}")
         sys.exit(1)
 
 
