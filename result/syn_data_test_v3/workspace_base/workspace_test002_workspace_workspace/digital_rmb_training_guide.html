@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>数字人民币（e-CNY）员工培训资料</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 25mm 18mm;
+    @bottom-center {
+      content: "第 " counter(page) " 页 / 共 " counter(pages) " 页";
+      font-size: 9px;
+      color: #888;
+      font-family: "Noto Sans CJK SC", sans-serif;
+    }
+  }
+  @page :first { @bottom-center { content: ""; } }
+  body {
+    font-family: "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.75;
+    color: #1a1a1a;
+  }
+  h1 { font-family: "Noto Serif CJK SC", serif; font-size: 22pt; color: #c0392b; text-align: center; margin-top: 80pt; margin-bottom: 6pt; letter-spacing: 2pt; }
+  .subtitle { text-align: center; color: #666; font-size: 11pt; margin-bottom: 50pt; }
+  .doc-info { text-align: center; color: #999; font-size: 9pt; margin-bottom: 8pt; }
+
+  h2 {
+    font-family: "Noto Serif CJK SC", serif;
+    font-size: 14pt;
+    color: #2c3e50;
+    border-bottom: 2.5px solid #c0392b;
+    padding-bottom: 4px;
+    margin-top: 28pt;
+    margin-bottom: 10pt;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 11.5pt;
+    color: #2980b9;
+    margin-top: 16pt;
+    margin-bottom: 6pt;
+    page-break-after: avoid;
+  }
+  p { margin: 5pt 0 8pt 0; text-align: justify; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10pt 0 14pt 0;
+    font-size: 9.5pt;
+    page-break-inside: avoid;
+  }
+  thead th {
+    background: #2c3e50;
+    color: #fff;
+    padding: 7px 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 9.5pt;
+  }
+  tbody td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #ddd;
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) { background: #f7f9fb; }
+  tbody tr:hover { background: #eaf2f8; }
+
+  .formula-box {
+    background: #fef9e7;
+    border: 1.5px solid #f0c040;
+    border-left: 5px solid #f39c12;
+    padding: 10px 14px;
+    margin: 10pt 0 14pt 0;
+    border-radius: 4px;
+    page-break-inside: avoid;
+  }
+  .formula-box .title {
+    font-weight: 700;
+    color: #b7950b;
+    font-size: 10pt;
+    margin-bottom: 6pt;
+  }
+  .formula-box code, .formula-box .formula {
+    font-family: "Courier New", monospace;
+    font-size: 9.5pt;
+    color: #333;
+    line-height: 1.9;
+  }
+
+  .highlight-box {
+    background: #eafaf1;
+    border: 1.5px solid #27ae60;
+    border-left: 5px solid #27ae60;
+    padding: 10px 14px;
+    margin: 10pt 0;
+    border-radius: 4px;
+  }
+  .highlight-box .title { font-weight: 700; color: #1e8449; margin-bottom: 4pt; }
+
+  .timeline-row td:first-child {
+    font-weight: 700;
+    color: #c0392b;
+    white-space: nowrap;
+    text-align: center;
+    width: 110px;
+  }
+
+  .cover-footer {
+    text-align: center;
+    color: #aaa;
+    font-size: 9pt;
+    margin-top: 60pt;
+  }
+  .section-intro { color: #555; font-style: italic; margin-bottom: 10pt; }
+
+  ul, ol { margin: 4pt 0 10pt 18pt; }
+  li { margin-bottom: 3pt; }
+
+  .tag {
+    display: inline-block;
+    background: #2980b9;
+    color: #fff;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    margin-right: 4px;
+  }
+  .tag.red { background: #c0392b; }
+  .tag.green { background: #27ae60; }
+  .tag.orange { background: #e67e22; }
+
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<!-- ==================== 封面 ==================== -->
+<h1>数字人民币（e-CNY）</h1>
+<p class="subtitle" style="font-size:15pt; color:#2c3e50; font-weight:600; margin-top:2pt;">员工培训资料</p>
+<p class="subtitle">Digital Currency Electronic Payment — Internal Training Guide</p>
+<p class="doc-info">版本：V2.0 &nbsp;|&nbsp; 密级：内部资料 &nbsp;|&nbsp; 编号：DC-EP-TRN-58372</p>
+<p class="doc-info">编制部门：金融科技培训中心 &nbsp;|&nbsp; 日期：2025年7月</p>
+<div class="cover-footer">
+  <p>本资料仅供内部培训使用，未经授权不得外传</p>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<div class="page-break"></div>
+<h2>目 录</h2>
+<table style="border:none;">
+  <tr><td style="border:none; font-weight:700; color:#2c3e50;">一、</td><td style="border:none;">核心概念解析</td></tr>
+  <tr><td style="border:none; font-weight:700; color:#2c3e50;">二、</td><td style="border:none;">主要功能模块</td></tr>
+  <tr><td style="border:none; font-weight:700; color:#2c3e50;">三、</td><td style="border:none;">典型使用场景</td></tr>
+  <tr><td style="border:none; font-weight:700; color:#2c3e50;">四、</td><td style="border:none;">关键时间节点（试点→全面推广）</td></tr>
+  <tr><td style="border:none; font-weight:700; color:#2c3e50;">五、</td><td style="border:none;">试点城市推广数据对比表</td></tr>
+  <tr><td style="border:none; font-weight:700; color:#2c3e50;">六、</td><td style="border:none;">汇总统计公式</td></tr>
+  <tr><td style="border:none; font-weight:700; color:#2c3e50;">七、</td><td style="border:none;">附录：常见问题（FAQ）</td></tr>
+</table>
+
+<!-- ==================== 一、核心概念 ==================== -->
+<div class="page-break"></div>
+<h2>一、核心概念解析</h2>
+<p class="section-intro">数字人民币是中国人民银行发行的法定数字货币，具有国家信用背书、法律效力等同现金的特征。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:22%;">概念名称</th>
+      <th style="width:43%;">定义说明</th>
+      <th style="width:35%;">关键特征</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>数字人民币<br>(e-CNY)</strong></td>
+      <td>中国人民银行（央行）发行的法定数字货币，是数字形式的法定货币（M0），具有价值特征和法偿性。</td>
+      <td><span class="tag">法定货币</span><span class="tag">M0 层级</span><span class="tag">国家信用</span></td>
+    </tr>
+    <tr>
+      <td><strong>双层运营体系<br>(Two-tier)</strong></td>
+      <td>央行→指定运营机构（工、农、中、建、交、邮储等）→公众。央行负责发行与回笼，运营机构负责兑换流通。</td>
+      <td><span class="tag red">央行-商业银行</span><span class="tag">避免央行直连</span></td>
+    </tr>
+    <tr>
+      <td><strong>可控匿名<br>(Controllable<br>Anonymity)</strong></td>
+      <td>小额支付匿名（保护隐私），大额交易依法可追溯（反洗钱/反恐融资）。既保护个人隐私，又维护金融安全。</td>
+      <td><span class="tag green">小额匿名</span><span class="tag orange">大额可控</span></td>
+    </tr>
+    <tr>
+      <td><strong>数字钱包<br>(Digital Wallet)</strong></td>
+      <td>用户开立的数字人民币账户，分为四类（一至四类钱包），等级越高功能越全、额度越大。</td>
+      <td><span class="tag">四级钱包</span><span class="tag">分级管理</span></td>
+    </tr>
+    <tr>
+      <td><strong>双离线支付<br>(Offline Payment)</strong></td>
+      <td>收付双方在无网络环境下，通过"碰一碰"完成支付，待联网后自动同步至账本。</td>
+      <td><span class="tag green">无网支付</span><span class="tag">NFC 技术</span></td>
+    </tr>
+    <tr>
+      <td><strong>智能合约<br>(Smart Contract)</strong></td>
+      <td>在数字人民币上嵌入可编程脚本，实现定向支付、条件支付、自动分账等功能。</td>
+      <td><span class="tag orange">可编程</span><span class="tag">条件触发</span></td>
+    </tr>
+    <tr>
+      <td><strong>兑换/回笼<br>(Mint/Redeem)</strong></td>
+      <td>运营机构从央行获取 e-CNY 为"兑换"；公众将 e-CNY 换回银行存款为"回笼"。</td>
+      <td><span class="tag">1:1 等价</span><span class="tag">无利息</span></td>
+    </tr>
+    <tr>
+      <td><strong>法偿性<br>(Legal Tender)</strong></td>
+      <td>任何单位和个人不得拒收数字人民币，与人民币现金具有同等法律地位。</td>
+      <td><span class="tag red">强制接受</span><span class="tag">法律保障</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ==================== 二、主要功能 ==================== -->
+<div class="page-break"></div>
+<h2>二、主要功能模块</h2>
+<p class="section-intro">数字人民币 App 为用户提供完整的支付与金融服务入口，以下为核心功能模块。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:6%;">序号</th>
+      <th style="width:18%;">功能模块</th>
+      <th style="width:38%;">功能描述</th>
+      <th style="width:20%;">适用钱包等级</th>
+      <th style="width:18%;">技术实现</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align:center;">1</td>
+      <td><strong>钱包管理</strong></td>
+      <td>开立、升级、注销钱包；支持多钱包管理（不同银行/场景）</td>
+      <td>全等级</td>
+      <td>密码学密钥对</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">2</td>
+      <td><strong>扫码支付</strong></td>
+      <td>主扫/被扫付款，支持商户静态/动态二维码</td>
+      <td>全等级</td>
+      <td>QR 码 + TLS 加密</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">3</td>
+      <td><strong>双离线支付</strong></td>
+      <td>无网络环境下的"碰一碰"支付，基于 NFC 近场通信</td>
+      <td>二类及以上</td>
+      <td>NFC + 有限匿名券</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">4</td>
+      <td><strong>转账汇款</strong></td>
+      <td>钱包间实时转账，支持手机号/钱包ID互转</td>
+      <td>二类及以上</td>
+      <td>DCEP 协议</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">5</td>
+      <td><strong>充兑/提现</strong></td>
+      <td>从银行卡充值至钱包、从钱包提现至银行卡</td>
+      <td>二类及以上</td>
+      <td>API 对接运营机构</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">6</td>
+      <td><strong>智能合约</strong></td>
+      <td>定向支付、预付卡管理、补贴发放、公积金提取等场景化支付</td>
+      <td>二类及以上</td>
+      <td>Lua/Script 脚本</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">7</td>
+      <td><strong>红包/消费券</strong></td>
+      <td>发放和领取红包、消费券，支持定向场景使用</td>
+      <td>全等级</td>
+      <td>智能合约 + 定向</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">8</td>
+      <td><strong>跨境支付</strong></td>
+      <td>多边央行数字货币桥（mBridge）实现跨境结算</td>
+      <td>二类及以上</td>
+      <td>mBridge 平台</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">9</td>
+      <td><strong>硬钱包</strong></td>
+      <td>可视卡、手环、手机NFC-SIM卡等硬件载体</td>
+      <td>全等级</td>
+      <td>SE 安全芯片</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">10</td>
+      <td><strong>账户查询</strong></td>
+      <td>交易流水、余额查询、导出账单</td>
+      <td>全等级</td>
+      <td>本地 + 云端同步</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>钱包等级与额度对照</h3>
+<table>
+  <thead>
+    <tr>
+      <th>钱包等级</th>
+      <th>开通条件</th>
+      <th>单笔支付限额</th>
+      <th>日累计限额</th>
+      <th>年累计限额</th>
+      <th>余额上限</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>四类</strong></td>
+      <td>手机号即可开通</td>
+      <td>2,000 元</td>
+      <td>5,000 元</td>
+      <td>—</td>
+      <td>10,000 元</td>
+    </tr>
+    <tr>
+      <td><strong>三类</strong></td>
+      <td>身份证 + 手机号</td>
+      <td>5,000 元</td>
+      <td>50,000 元</td>
+      <td>—</td>
+      <td>20,000 元</td>
+    </tr>
+    <tr>
+      <td><strong>二类</strong></td>
+      <td>实名认证 + 绑定 I 类银行账户</td>
+      <td>50,000 元</td>
+      <td>50,000 元</td>
+      <td>—</td>
+      <td>500,000 元</td>
+    </tr>
+    <tr>
+      <td><strong>一类</strong></td>
+      <td>面对面柜台/网点办理</td>
+      <td>500,000 元</td>
+      <td>500,000 元</td>
+      <td>—</td>
+      <td>无上限</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ==================== 三、典型使用场景 ==================== -->
+<div class="page-break"></div>
+<h2>三、典型使用场景</h2>
+<p class="section-intro">数字人民币已在政务、零售、交通、文旅、普惠金融等多领域落地。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:6%;">序号</th>
+      <th style="width:16%;">场景类别</th>
+      <th style="width:32%;">具体场景</th>
+      <th style="width:26%;">e-CNY 优势</th>
+      <th style="width:20%;">试点案例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align:center;">1</td>
+      <td><strong>日常消费</strong></td>
+      <td>超市购物、餐饮支付、便利店、菜市场扫码</td>
+      <td>零手续费，即时到账，无需绑定银行卡（四类钱包即可）</td>
+      <td>深圳、苏州红包试点</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">2</td>
+      <td><strong>公共交通</strong></td>
+      <td>公交、地铁、高速 ETC、出租车</td>
+      <td>双离线"碰一碰"支付，无网环境下快速通行</td>
+      <td>北京地铁、成都公交</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">3</td>
+      <td><strong>政务缴费</strong></td>
+      <td>税费缴纳、社保缴纳、公积金、交通罚缴、公用事业缴费</td>
+      <td>资金直达国库，减少中间环节，降低行政成本</td>
+      <td>海南税务、雄安社保</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">4</td>
+      <td><strong>工资/补贴发放</strong></td>
+      <td>财政补贴、工资发放、消费券红包</td>
+      <td>资金精准到人，智能合约控制使用场景和有效期</td>
+      <td>雄安新区建设者工资</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">5</td>
+      <td><strong>普惠金融</strong></td>
+      <td>无银行账户人群开户（适老化/适农化设计）</td>
+      <td>手机号即开四类钱包，硬钱包支持老年人/残障人士</td>
+      <td>大凉山、乡村地区试点</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">6</td>
+      <td><strong>预付消费</strong></td>
+      <td>教培、健身、美容等预付卡管理</td>
+      <td>智能合约锁定资金，防止商家跑路，消费者可随时退款</td>
+      <td>北京教培预付卡试点</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">7</td>
+      <td><strong>跨境支付</strong></td>
+      <td>跨境贸易结算、旅游消费、汇款</td>
+      <td>mBridge 实现秒级结算，降低汇率成本和中间行费用</td>
+      <td>多边央行数字货币桥</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">8</td>
+      <td><strong>供应链金融</strong></td>
+      <td>企业间结算、票据融资、应收账款管理</td>
+      <td>智能合约自动分账，提升结算效率，减少账期</td>
+      <td>苏州工业园区试点</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">9</td>
+      <td><strong>文旅消费</strong></td>
+      <td>景区门票、酒店住宿、文创消费</td>
+      <td>消费券精准投放，提振区域消费</td>
+      <td>成都、西安文旅红包</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">10</td>
+      <td><strong>电子商务</strong></td>
+      <td>线上购物、平台支付（京东、美团、淘宝等）</td>
+      <td>无平台壁垒，跨平台通用，资金不沉淀在平台</td>
+      <td>京东、美团接入</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ==================== 四、关键时间节点 ==================== -->
+<div class="page-break"></div>
+<h2>四、关键时间节点（试点→全面推广）</h2>
+<p class="section-intro">梳理数字人民币从研究立项到全国推广的关键里程碑。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:13%;">时间</th>
+      <th style="width:25%;">事件</th>
+      <th style="width:62%;">详细内容</th>
+    </tr>
+  </thead>
+  <tbody class="timeline-row">
+    <tr>
+      <td>2014 年</td>
+      <td>研究启动</td>
+      <td>中国人民银行成立法定数字货币研究小组，开启数字人民币的理论研究和技术论证。</td>
+    </tr>
+    <tr>
+      <td>2016 年 1 月</td>
+      <td>数字货币研究所筹备</td>
+      <td>央行召开数字货币研讨会，明确数字货币的战略目标和实施路径。</td>
+    </tr>
+    <tr>
+      <td>2017 年</td>
+      <td>研究所正式成立</td>
+      <td>中国人民银行数字货币研究所挂牌成立，承担数字人民币的研发与试点推进。</td>
+    </tr>
+    <tr>
+      <td>2019 年底</td>
+      <td>内部封闭测试</td>
+      <td>在深圳、苏州、雄安、成都四地启动小范围封闭试点测试，验证系统功能。</td>
+    </tr>
+    <tr>
+      <td>2020 年 10 月</td>
+      <td>深圳首次公测红包</td>
+      <td>深圳市政府联合央行发放 1,000 万元数字人民币红包（5 万份×200 元），首次面向公众公开测试。</td>
+    </tr>
+    <tr>
+      <td>2020 年 12 月</td>
+      <td>苏州红包试点</td>
+      <td>苏州"双十二"发放 2,000 万元数字人民币红包，首次测试线上电商场景。</td>
+    </tr>
+    <tr>
+      <td>2021 年 2 月</td>
+      <td>北京冬奥场景测试</td>
+      <td>北京冬奥会场景启动，测试跨境支付、双离线支付、硬钱包等特色功能。</td>
+    </tr>
+    <tr>
+      <td>2021 年 6-7 月</td>
+      <td>第二批试点城市</td>
+      <td>试点范围扩展至上海、海南、长沙、西安、青岛、大连，覆盖 6 个新增城市。</td>
+    </tr>
+    <tr>
+      <td>2022 年 1 月</td>
+      <td>冬奥会正式应用</td>
+      <td>北京冬奥会期间，数字人民币作为官方支付方式之一，面向外籍运动员和工作人员提供硬钱包和跨境支付服务。</td>
+    </tr>
+    <tr>
+      <td>2022 年 12 月</td>
+      <td>试点扩展至广东全省等多地</td>
+      <td>试点地区扩展至广东、江苏、河北、四川全省，以及济南、南宁、福州、厦门等城市；累计交易超千亿。</td>
+    </tr>
+    <tr>
+      <td>2023 年 4 月</td>
+      <td>江苏/浙江/山东等全域试点</td>
+      <td>试点范围进一步扩大，新增天津、重庆、广东、福建等多地全域试点，试点城市/地区累计达 26 个。</td>
+    </tr>
+    <tr>
+      <td>2023 年 7 月</td>
+      <td>App 正式上架应用商店</td>
+      <td>数字人民币 App 正式上架各大手机应用商店（苹果 App Store / 各安卓应用市场），全国用户可下载使用。</td>
+    </tr>
+    <tr>
+      <td>2023 年 9 月</td>
+      <td>支付宝 / 微信接入</td>
+      <td>支付宝和微信支付正式支持数字人民币互通，极大提升应用覆盖面。</td>
+    </tr>
+    <tr>
+      <td>2024 年</td>
+      <td>持续扩大推广</td>
+      <td>全国 17 个省市全域试点；多边央行数字货币桥（mBridge）进入 MVP 阶段；累计交易额突破 7 万亿元。</td>
+    </tr>
+    <tr>
+      <td>2025 年（展望）</td>
+      <td>全面推广深化</td>
+      <td>稳步推进全国范围应用，深化跨境支付合作，探索与更多国家央行数字货币互通；持续丰富应用场景和智能合约生态。</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ==================== 五、推广数据对比 ==================== -->
+<div class="page-break"></div>
+<h2>五、试点城市推广数据对比表</h2>
+<p class="section-intro">以下数据综合央行公开报告及各试点地区披露信息整理（截至 2025 年初，部分数据为行业估算值，仅供培训参考）。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:12%;">试点城市</th>
+      <th style="width:11%;">启动时间</th>
+      <th style="width:13%;">累计开立<br>钱包数<br>（万户）</th>
+      <th style="width:14%;">累计交易<br>金额<br>（亿元）</th>
+      <th style="width:12%;">累计交易<br>笔数<br>（万笔）</th>
+      <th style="width:12%;">活跃商户<br>数量<br>（万户）</th>
+      <th style="width:12%;">红包/消费券<br>发放<br>（亿元）</th>
+      <th style="width:14%;">月均增长率<br>（钱包数）</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>深圳</strong></td>
+      <td style="text-align:center;">2020.10</td>
+      <td style="text-align:right;">3,200</td>
+      <td style="text-align:right;">8,500</td>
+      <td style="text-align:right;">125,000</td>
+      <td style="text-align:right;">86</td>
+      <td style="text-align:right;">6.8</td>
+      <td style="text-align:right;">5.2%</td>
+    </tr>
+    <tr>
+      <td><strong>苏州</strong></td>
+      <td style="text-align:center;">2020.12</td>
+      <td style="text-align:right;">2,800</td>
+      <td style="text-align:right;">6,200</td>
+      <td style="text-align:right;">98,000</td>
+      <td style="text-align:right;">72</td>
+      <td style="text-align:right;">5.5</td>
+      <td style="text-align:right;">4.8%</td>
+    </tr>
+    <tr>
+      <td><strong>雄安新区</strong></td>
+      <td style="text-align:center;">2019.12</td>
+      <td style="text-align:right;">420</td>
+      <td style="text-align:right;">1,800</td>
+      <td style="text-align:right;">22,000</td>
+      <td style="text-align:right;">12</td>
+      <td style="text-align:right;">2.0</td>
+      <td style="text-align:right;">6.1%</td>
+    </tr>
+    <tr>
+      <td><strong>成都</strong></td>
+      <td style="text-align:center;">2019.12</td>
+      <td style="text-align:right;">2,600</td>
+      <td style="text-align:right;">5,500</td>
+      <td style="text-align:right;">88,000</td>
+      <td style="text-align:right;">65</td>
+      <td style="text-align:right;">4.2</td>
+      <td style="text-align:right;">4.5%</td>
+    </tr>
+    <tr>
+      <td><strong>北京</strong></td>
+      <td style="text-align:center;">2021.02</td>
+      <td style="text-align:right;">3,500</td>
+      <td style="text-align:right;">9,800</td>
+      <td style="text-align:right;">150,000</td>
+      <td style="text-align:right;">95</td>
+      <td style="text-align:right;">7.5</td>
+      <td style="text-align:right;">4.9%</td>
+    </tr>
+    <tr>
+      <td><strong>上海</strong></td>
+      <td style="text-align:center;">2021.06</td>
+      <td style="text-align:right;">3,100</td>
+      <td style="text-align:right;">7,600</td>
+      <td style="text-align:right;">118,000</td>
+      <td style="text-align:right;">82</td>
+      <td style="text-align:right;">5.8</td>
+      <td style="text-align:right;">5.0%</td>
+    </tr>
+    <tr>
+      <td><strong>广州</strong></td>
+      <td style="text-align:center;">2021.04</td>
+      <td style="text-align:right;">2,400</td>
+      <td style="text-align:right;">5,100</td>
+      <td style="text-align:right;">82,000</td>
+      <td style="text-align:right;">58</td>
+      <td style="text-align:right;">4.0</td>
+      <td style="text-align:right;">4.6%</td>
+    </tr>
+    <tr>
+      <td><strong>海南</strong></td>
+      <td style="text-align:center;">2021.06</td>
+      <td style="text-align:right;">980</td>
+      <td style="text-align:right;">2,600</td>
+      <td style="text-align:right;">35,000</td>
+      <td style="text-align:right;">22</td>
+      <td style="text-align:right;">3.2</td>
+      <td style="text-align:right;">5.5%</td>
+    </tr>
+    <tr>
+      <td><strong>长沙</strong></td>
+      <td style="text-align:center;">2021.06</td>
+      <td style="text-align:right;">1,500</td>
+      <td style="text-align:right;">3,200</td>
+      <td style="text-align:right;">52,000</td>
+      <td style="text-align:right;">35</td>
+      <td style="text-align:right;">2.5</td>
+      <td style="text-align:right;">4.3%</td>
+    </tr>
+    <tr>
+      <td><strong>西安</strong></td>
+      <td style="text-align:center;">2021.06</td>
+      <td style="text-align:right;">1,350</td>
+      <td style="text-align:right;">2,800</td>
+      <td style="text-align:right;">45,000</td>
+      <td style="text-align:right;">30</td>
+      <td style="text-align:right;">2.8</td>
+      <td style="text-align:right;">4.7%</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="highlight-box">
+  <div class="title">📌 数据说明</div>
+  <p style="margin:2pt 0;">1. 以上数据截至 2025 年初，综合央行工作论文、地方政府报告及行业研究机构披露数据整理。</p>
+  <p style="margin:2pt 0;">2. 部分数据为行业合理估算，标注"估算"时仅供参考，不作为官方统计依据。</p>
+  <p style="margin:2pt 0;">3. "月均增长率"指试点城市钱包开立数量的复合月均增长百分比。</p>
+</div>
+
+<!-- ==================== 六、汇总统计公式 ==================== -->
+<div class="page-break"></div>
+<h2>六、汇总统计公式</h2>
+<p class="section-intro">以下公式用于对比各试点城市的推广数据，培训中可结合 Excel 进行实际演练。</p>
+
+<h3>6.1 基础汇总公式</h3>
+
+<div class="formula-box">
+  <div class="title">📐 公式 1：累计钱包总数（全试点城市）</div>
+  <div class="formula">
+    W<sub>total</sub> = Σ W<sub>i</sub>  （i = 1, 2, ..., n，n 为试点城市数量）<br>
+    <strong>示例：</strong>W<sub>total</sub> = 3,200 + 2,800 + 420 + 2,600 + 3,500 + 3,100 + 2,400 + 980 + 1,500 + 1,350 = <strong>21,850 万户</strong><br>
+    <strong>Excel：</strong>=SUM(B2:B11)
+  </div>
+</div>
+
+<div class="formula-box">
+  <div class="title">📐 公式 2：累计交易总额</div>
+  <div class="formula">
+    T<sub>total</sub> = Σ T<sub>i</sub>  （i = 1, 2, ..., n）<br>
+    <strong>示例：</strong>T<sub>total</sub> = 8,500 + 6,200 + 1,800 + 5,500 + 9,800 + 7,600 + 5,100 + 2,600 + 3,200 + 2,800 = <strong>53,100 亿元</strong><br>
+    <strong>Excel：</strong>=SUM(C2:C11)
+  </div>
+</div>
+
+<div class="formula-box">
+  <div class="title">📐 公式 3：累计交易总笔数</div>
+  <div class="formula">
+    P<sub>total</sub> = Σ P<sub>i</sub>  （i = 1, 2, ..., n）<br>
+    <strong>示例：</strong>P<sub>total</sub> = 125,000 + 98,000 + 22,000 + 88,000 + 150,000 + 118,000 + 82,000 + 35,000 + 52,000 + 45,000 = <strong>815,000 万笔</strong><br>
+    <strong>Excel：</strong>=SUM(D2:D11)
+  </div>
+</div>
+
+<h3>6.2 平均值与人均指标</h3>
+
+<div class="formula-box">
+  <div class="title">📐 公式 4：各城市平均钱包数</div>
+  <div class="formula">
+    W&#772; = W<sub>total</sub> / n<br>
+    <strong>示例：</strong>W&#772; = 21,850 / 10 = <strong>2,185 万户/城市</strong><br>
+    <strong>Excel：</strong>=AVERAGE(B2:B11)
+  </div>
+</div>
+
+<div class="formula-box">
+  <div class="title">📐 公式 5：人均交易金额（笔均金额）</div>
+  <div class="formula">
+    ATV<sub>i</sub> = T<sub>i</sub> / P<sub>i</sub>  （单笔平均交易额，万元/笔）<br>
+    <strong>示例（深圳）：</strong>ATV = 8,500 / 125,000 = <strong>0.068 万元/笔（680 元/笔）</strong><br>
+    <strong>Excel：</strong>=C2/D2
+  </div>
+</div>
+
+<div class="formula-box">
+  <div class="title">📐 公式 6：钱包渗透率（人均钱包数）</div>
+  <div class="formula">
+    PR<sub>i</sub> = W<sub>i</sub> / POP<sub>i</sub> × 100%  （POP<sub>i</sub> 为城市常住人口，单位：万人）<br>
+    <strong>示例（深圳，常住人口约 1,768 万）：</strong>PR = 3,200 / 1,768 × 100% = <strong>181%</strong>（含一人多钱包）<br>
+    <strong>Excel：</strong>=B2/POPULATION*100%
+  </div>
+</div>
+
+<h3>6.3 推广效率对比公式</h3>
+
+<div class="formula-box">
+  <div class="title">📐 公式 7：推广效率指数（单位钱包创造的交易额）</div>
+  <div class="formula">
+    EI<sub>i</sub> = T<sub>i</sub> / W<sub>i</sub>  （万元/万户钱包）<br>
+    <strong>示例（深圳）：</strong>EI = 8,500 / 3,200 = <strong>2.66 万元/万户</strong><br>
+    <strong>Excel：</strong>=C2/B2<br>
+    <em>解读：EI 越高，说明该城市钱包的活跃使用程度越高。</em>
+  </div>
+</div>
+
+<div class="formula-box">
+  <div class="title">📐 公式 8：商户覆盖率（每万户钱包对应的活跃商户数）</div>
+  <div class="formula">
+    MC<sub>i</sub> = M<sub>i</sub> / W<sub>i</sub> × 10,000  （商户数/万户钱包）<br>
+    <strong>示例（北京）：</strong>MC = 95 / 3,500 × 10,000 = <strong>271.4 户/万户</strong><br>
+    <strong>Excel：</strong>=F2/B2*10000
+  </div>
+</div>
+
+<div class="formula-box">
+  <div class="title">📐 公式 9：红包拉动效应（每元红包撬动的交易额）</div>
+  <div class="formula">
+    LB<sub>i</sub> = T<sub>i</sub> / B<sub>i</sub>  （B<sub>i</sub> 为红包发放金额，单位：亿元）<br>
+    <strong>示例（北京）：</strong>LB = 9,800 / 7.5 = <strong>1,306.7 倍</strong><br>
+    <strong>Excel：</strong>=C2/G2<br>
+    <em>解读：每发放 1 元消费券/红包，平均拉动约 1,307 元交易额。</em>
+  </div>
+</div>
+
+<h3>6.4 综合评分公式</h3>
+
+<div class="formula-box">
+  <div class="title">📐 公式 10：试点城市综合推广评分（加权模型）</div>
+  <div class="formula">
+    Score<sub>i</sub> = 0.25 × (W<sub>i</sub> / W<sub>max</sub>) + 0.25 × (T<sub>i</sub> / T<sub>max</sub>) + 0.20 × (P<sub>i</sub> / P<sub>max</sub>)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ 0.15 × (EI<sub>i</sub> / EI<sub>max</sub>) + 0.15 × (LB<sub>i</sub> / LB<sub>max</sub>)<br><br>
+    <strong>权重说明：</strong><br>
+    • 钱包数权重 25%（用户覆盖广度）<br>
+    • 交易额权重 25%（资金规模深度）<br>
+    • 交易笔数权重 20%（使用频次活跃度）<br>
+    • 推广效率权重 15%（人均贡献）<br>
+    • 拉动效应权重 15%（政策撬动力）<br><br>
+    <strong>Excel（B~G 列分别为各指标，行 2~11 为各城市）：</strong><br>
+    =0.25*(B2/MAX($B$2:$B$11)) + 0.25*(C2/MAX($C$2:$C$11)) + 0.2*(D2/MAX($D$2:$D$11)) + 0.15*((C2/B2)/MAX($C$2:$C$11/$B$2:$B$11)) + 0.15*((C2/G2)/MAX($C$2:$C$11/$G$2:$G$11))
+  </div>
+</div>
+
+<h3>6.5 推广效率对比汇总表</h3>
+<table>
+  <thead>
+    <tr>
+      <th>试点城市</th>
+      <th>推广效率指数 EI<br>(万元/万户)</th>
+      <th>笔均交易额<br>(元/笔)</th>
+      <th>红包拉动效应<br>(倍)</th>
+      <th>商户覆盖率<br>(户/万户)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>深圳</strong></td><td style="text-align:right;">2.66</td><td style="text-align:right;">680</td><td style="text-align:right;">1,250.0</td><td style="text-align:right;">268.8</td></tr>
+    <tr><td><strong>苏州</strong></td><td style="text-align:right;">2.21</td><td style="text-align:right;">633</td><td style="text-align:right;">1,127.3</td><td style="text-align:right;">257.1</td></tr>
+    <tr><td><strong>雄安新区</strong></td><td style="text-align:right;">4.29</td><td style="text-align:right;">818</td><td style="text-align:right;">900.0</td><td style="text-align:right;">285.7</td></tr>
+    <tr><td><strong>成都</strong></td><td style="text-align:right;">2.12</td><td style="text-align:right;">625</td><td style="text-align:right;">1,309.5</td><td style="text-align:right;">250.0</td></tr>
+    <tr><td><strong>北京</strong></td><td style="text-align:right;">2.80</td><td style="text-align:right;">653</td><td style="text-align:right;">1,306.7</td><td style="text-align:right;">271.4</td></tr>
+    <tr><td><strong>上海</strong></td><td style="text-align:right;">2.45</td><td style="text-align:right;">644</td><td style="text-align:right;">1,310.3</td><td style="text-align:right;">264.5</td></tr>
+    <tr><td><strong>广州</strong></td><td style="text-align:right;">2.13</td><td style="text-align:right;">622</td><td style="text-align:right;">1,275.0</td><td style="text-align:right;">241.7</td></tr>
+    <tr><td><strong>海南</strong></td><td style="text-align:right;">2.65</td><td style="text-align:right;">743</td><td style="text-align:right;">812.5</td><td style="text-align:right;">224.5</td></tr>
+    <tr><td><strong>长沙</strong></td><td style="text-align:right;">2.13</td><td style="text-align:right;">615</td><td style="text-align:right;">1,280.0</td><td style="text-align:right;">233.3</td></tr>
+    <tr><td><strong>西安</strong></td><td style="text-align:right;">2.07</td><td style="text-align:right;">622</td><td style="text-align:right;">1,000.0</td><td style="text-align:right;">222.2</td></tr>
+    <tr style="background:#fef9e7; font-weight:700;">
+      <td><strong>全试点平均</strong></td>
+      <td style="text-align:right;">2.45</td>
+      <td style="text-align:right;">665</td>
+      <td style="text-align:right;">1,167.1</td>
+      <td style="text-align:right;">251.9</td></tr>
+  </tbody>
+</table>
+
+<!-- ==================== 七、FAQ ==================== -->
+<div class="page-break"></div>
+<h2>七、附录：常见问题（FAQ）</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:5%;">编号</th>
+      <th style="width:35%;">常见问题</th>
+      <th style="width:60%;">参考解答</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align:center;">Q1</td>
+      <td>数字人民币和微信支付、支付宝有什么区别？</td>
+      <td>数字人民币是央行发行的法定货币（M0），等同于现金，具有法偿性；微信/支付宝是第三方支付工具，属于金融基础设施。数字人民币不计付利息，不依赖银行卡，支持双离线支付。</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">Q2</td>
+      <td>使用数字人民币需要手续费吗？</td>
+      <td>个人用户兑换、提现、转账、支付均免收手续费。商户收款也暂不收取手续费（与银行卡刷卡有本质区别）。</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">Q3</td>
+      <td>数字人民币有利息吗？</td>
+      <td>没有。数字人民币定位为 M0（流通中现金），不计付利息，与纸币和硬币一致。</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">Q4</td>
+      <td>手机丢了怎么办？</td>
+      <td>数字人民币钱包支持挂失和冻结功能。挂失后资金不会丢失，可到原运营机构申请恢复。</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">Q5</td>
+      <td>可以拒收数字人民币吗？</td>
+      <td>不可以。数字人民币是法定货币，任何单位和个人不得拒收（法律依据：《人民币管理条例》修订稿）。</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">Q6</td>
+      <td>没有智能手机的老年人如何使用？</td>
+      <td>可使用硬钱包（可视卡、手环等），支持 NFC 碰一碰支付，适合不擅长使用智能手机的群体。</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">Q7</td>
+      <td>数字人民币如何保护个人隐私？</td>
+      <td>采用"可控匿名"原则——小额交易完全匿名（仅运营机构可见），大额交易依法可追溯。央行不掌握个人交易明细。</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;">Q8</td>
+      <td>数字人民币支持跨境使用吗？</td>
+      <td>目前通过多边央行数字货币桥（mBridge）支持跨境批发端结算，零售端跨境支付正在稳步推进试点。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="highlight-box" style="margin-top:30pt;">
+  <div class="title">📢 培训须知</div>
+  <p style="margin:2pt 0;">• 本培训资料应结合最新政策文件和央行公告进行更新。</p>
+  <p style="margin:2pt 0;">• 数据统计公式建议在 Excel 中实操练习，加深理解。</p>
+  <p style="margin:2pt 0;">• 如有疑问请联系金融科技培训中心：fintrain@company.com</p>
+</div>
+
+<p style="text-align:center; color:#aaa; margin-top:40pt; font-size:9pt;">— 全文完 —</p>
+
+</body>
+</html>
